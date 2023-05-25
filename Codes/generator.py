@@ -76,6 +76,24 @@ def cartesian_product(R,S):
 def hash1(x):
     return x%3
 
+def fnv_1a_hash_numeric(data):
+    '''Fonction de hachage fnv_1a (source : wikipedia/chat GPT)
+    Se renseigner dessus sur les perfomances collisions/mémoires'''
+    FNV_OFFSET_BASIS = 0x811C9DC5
+    FNV_PRIME = 0x01000193
+    hash_value = FNV_OFFSET_BASIS
+
+    # Convertir le nombre en octets
+    byte_data = bytes(str(data), 'utf-8')
+
+    for byte in byte_data:
+        hash_value ^= byte
+        hash_value *= FNV_PRIME
+
+    return hash_value & 0xFFFFFFFF
+
+
+
 def hash_join(R,S,hash_function=hash1):
     '''Renvoi un inner join des tables R et S en utilisant un algorithme de hachage simple
     collisions gérées par chainage'''
@@ -91,6 +109,7 @@ def hash_join(R,S,hash_function=hash1):
             H[key].append((x,y))
         else:
             H[key]=[(x,y)]
+    print(H)
     # Parcours de S
     for j in range(m):
         y,z=S['Y'].get(j),S['Z'].get(j)
