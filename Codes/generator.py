@@ -48,9 +48,9 @@ def sort_merge(R,S):
     iR=0
     iS=0
     written=0
-    read=2
+    read=2 #les deux premier Y
     while iS<N and iR<N :
-        read+=1
+        read+=1 # le prochain Y
         if R['Y'].get(iR)==S['Y'].get(iS): 
             T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
             written+=1
@@ -68,7 +68,7 @@ def sort_merge(R,S):
 
             iS+=1
             iR+=1
-            read+=2
+            read+=2 #on incrémente des deux cotes
     return pd.DataFrame(T,columns=['X','Y','Z']),read,written
     
 def cartesian_product(R,S):
@@ -131,11 +131,11 @@ def hash_join(R,S,hash_function=hash1):
     # Parcours de S
     for j in range(m):
         y,z=S['Y'].get(j),S['Z'].get(j)
-        read+=2
+        read+=3 # on lit les deux y + la clé
         key=hash_function(y)
         if key in H: #la clé existe on parcour toute la chaine
             for (Rx,Ry) in H[key]:
-                read+=1
+                read+=1 # un autre tuple
                 if y==Ry:
                     written+=1
                     T.append((Rx,Ry,z))
