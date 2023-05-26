@@ -69,17 +69,26 @@ def generate_db(N,selectivity,double=False):
     R=[]
     S=[]
     if double:
-        RY=[random.randint(1,9) for _ in range(N)]
+        RY=[random.randint(1,N) for _ in range(N)]
+        uniqueRY=list(set(RY))
+
+        #on récupere les Y en communs aux hasard
+        SY=[random.sample(uniqueRY,1)[0] for _ in range(relation)]
+
+        #on récupere des y inexistants dans R de facon aléatoire et uniforme
+        L=[random.randint(-N,0) for _ in range(N)]
+        L+=[random.randint(N+1,2*N) for _ in range(N)]
     else:
         RY=[i for i in range(1,N+1)]
         random.shuffle(RY)
-    #on récupere les Y en communs aux hasard
-    SY=random.sample(RY,relation)
 
-    #on récupere des y inexistants dans R de facon aléatoire et uniforme
-    L=[]
-    L=[i for i in range(-N+1,1)]
-    L+=[i for i in range(N+1,2*N+1)]
+        #on récupere les Y en communs aux hasard
+        SY=random.sample(RY,relation)
+
+        #on récupere des y inexistants dans R de facon aléatoire et uniforme
+        L=[i for i in range(-N+1,1)]
+        L+=[i for i in range(N+1,2*N+1)]
+
     SY+=random.sample(L,N-relation) 
     random.shuffle(SY)
    
@@ -96,7 +105,7 @@ def generate_db(N,selectivity,double=False):
 
 
 
-def sort_merge(R,S):
+def join_merge_sort(R,S):
     '''Renvoi un inner join des tables R et S en utilisant un algorithme de tri fusion'''
     n=len(R)
     # Tri des deux tables au préalable
@@ -127,7 +136,7 @@ def sort_merge(R,S):
             else :
                 
                 return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
-        if R['Y'].get(iR)==S['Y'].get(iS): 
+        elif R['Y'].get(iR)==S['Y'].get(iS): 
             T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
             written+=1
             iS+=1
@@ -239,7 +248,7 @@ if __name__ == '__main__':
     print("Sort-merge")
     print("-"*10)
     
-    A,r0,w0,r1,w1=sort_merge(R,S)
+    A,r0,w0,r1,w1=join_merge_sort(R,S)
     print(A)
     print("----")
     print("Pre-Traitement:\n")
