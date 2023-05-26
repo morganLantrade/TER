@@ -110,8 +110,23 @@ def sort_merge(R,S):
     iS=0
     written=0
     read=2 #les deux premier Y
-    while iS<N and iR<N :
+    while iR<N :
         read+=1 # le prochain Y
+        if iS==N :
+            if R['Y'].get(iR+1)==S['Y'].get(iS-1) :
+                iS-=1
+            
+                while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
+                    iS-=1
+                    read+=1
+
+                iS+=1
+                iR+=1
+                read+=2 #on incrémente des deux cotes
+                
+            else :
+                
+                return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
         if R['Y'].get(iR)==S['Y'].get(iS): 
             T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
             written+=1
@@ -212,11 +227,10 @@ def hash_join(R,S,hash_function=fnv_1a_hash_numeric):
 
 
 if __name__ == '__main__':
-    test=[4,5,7,2,1,3,5,4,8]
     
-    N=1000
-    selectivity=0.8
-    R,S=generate_db(N,selectivity,double=False)
+    N=10
+    selectivity=1
+    R,S=generate_db(N,selectivity,double=True)
     
     ##############################
     #sort-merge
