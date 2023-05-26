@@ -131,7 +131,7 @@ def hash_join(R,S,hash_function=hash1):
     # Parcours de S
     for j in range(m):
         y,z=S['Y'].get(j),S['Z'].get(j)
-        read+=3 # on lit les deux y + la clé
+        read+=2 # on lit y de S + la clé
         key=hash_function(y)
         if key in H: #la clé existe on parcour toute la chaine
             for (Rx,Ry) in H[key]:
