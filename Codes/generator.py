@@ -47,30 +47,45 @@ def sort_merge(R,S):
     T=[]
     iR=0
     iS=0
+    written=0
+    read=2
     while iS<N and iR<N :
+        read+=1
         if R['Y'].get(iR)==S['Y'].get(iS): 
             T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
+            written+=1
             iS+=1
+            
         elif R['Y'].get(iR)>S['Y'].get(iS):
             iS+=1
+            
         else:
             iS-=1
+            
             while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
                 iS-=1
+                read+=1
+
             iS+=1
             iR+=1
-    return pd.DataFrame(T,columns=['X','Y','Z'])
+            read+=2
+    return pd.DataFrame(T,columns=['X','Y','Z']),read,written
     
 def cartesian_product(R,S):
     '''Renvoi un inner join des tables R et S en utilisant un algorithme de produit cartésien simple'''
     n=len(R)
     m=len(S)
     T=[]
+    written=0
+    read=0
     for i in range(n):
+        read+=1
         for j in range(m):
+            read+=1
             if R['Y'].get(i)==S['Y'].get(j):
                 T.append((R['X'].get(i),R['Y'].get(i),S['Z'].get(j)))
-    return pd.DataFrame(T,columns=['X','Y','Z'])
+                written+=1
+    return pd.DataFrame(T,columns=['X','Y','Z']),read,written
 
 
 def hash1(x):
@@ -101,6 +116,7 @@ def hash_join(R,S,hash_function=hash1):
     n=len(R)
     m=len(S)
     T=[]
+
     #Remplissage de la table de hachage de R
     for i in range(n):
         x,y=R['X'].get(i),R['Y'].get(i)
@@ -110,19 +126,24 @@ def hash_join(R,S,hash_function=hash1):
         else:
             H[key]=[(x,y)]
     print(H)
+    written=0
+    read=0
     # Parcours de S
     for j in range(m):
         y,z=S['Y'].get(j),S['Z'].get(j)
+        read+=2
         key=hash_function(y)
         if key in H: #la clé existe on parcour toute la chaine
             for (Rx,Ry) in H[key]:
+                read+=1
                 if y==Ry:
+                    written+=1
                     T.append((Rx,Ry,z))
-    return pd.DataFrame(T,columns=['X','Y','Z'])
+    return pd.DataFrame(T,columns=['X','Y','Z']),read,written
 
 
 if __name__ == '__main__':
-    N=10
+    N=100
     selectivity=0.8
     R,S=generate_db(N,selectivity,double=False)
 
