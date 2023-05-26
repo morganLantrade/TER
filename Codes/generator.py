@@ -125,7 +125,7 @@ def hash_join(R,S,hash_function=hash1):
             H[key].append((x,y))
         else:
             H[key]=[(x,y)]
-    print(H)
+    
     written=0
     read=0
     # Parcours de S
@@ -147,26 +147,43 @@ if __name__ == '__main__':
     selectivity=0.8
     R,S=generate_db(N,selectivity,double=False)
 
-    print(R.sort_values(by=['Y']))
-    print()
-    print(S.sort_values(by=['Y']))
-    print()
+    
     print("-"*10)
     print("Sort-merge")
     print("-"*10)
-    print(sort_merge(R,S))
+    
+    A,r,w=sort_merge(R,S)
+    print(A)
+    print("----")
+    print("Pre-Traitement:\n")
+    print('Lecture :',"?",'/ Ecriture :',"?")
+    print("----")
+    print("Post-Traitement:\n")
+    print('Lecture :',r,'/ Ecriture :',w)
+    
+    #cartesian
     print("-"*10)
     print("Cartesian")
     print("-"*10)
-    print(cartesian_product(R,S))
+   
+    A,r,w=cartesian_product(R,S)
+    print(A)
+    print("----")
+    print("Pre-Traitement:\n")
+    print('Lecture :',0,'/ Ecriture :',0)
+    print("----")
+    print("Post-Traitement:\n")
+    print('Lecture :',r,'/ Ecriture :',w)
+    #hachage
     print("-"*10)
     print("Simple Hash")
     print("-"*10)
-    print(hash_join(R,S))
-    '''print(R)
-    print()
-    print(S)
-    print()
-    print(cartesian_product(R,S))'''
 
-    #print(R.join(S.set_index('Y'), on='Y',how='inner'))
+    A,r,w=hash_join(R,S)
+    print(A)
+    print("----")
+    print("Pre-Traitement:\n")
+    print('Lecture :',"?",'/ Ecriture :',"?")
+    print("----")
+    print("Post-Traitement:\n")
+    print('Lecture :',r,'/ Ecriture :',w)
