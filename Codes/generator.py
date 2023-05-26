@@ -28,7 +28,8 @@ def merge_sort(arr,i):
 
 
 def merge(left, right,i):
-    '''FOnction recursive qui effectue un tri fusion avec mémorisation des lectures et écritures dans la mémoire'''
+    '''FOnction recursive qui effectue un tri fusion avec mémorisation des lectures et écritures dans la mémoire
+    selon i l'index pour lequel le tuple est trié  , 1 pour R et 0 pour S'''
     merged = []
     left_index = 0
     right_index = 0
@@ -217,7 +218,9 @@ if __name__ == '__main__':
     selectivity=0.8
     R,S=generate_db(N,selectivity,double=False)
     
-    
+    ##############################
+    #sort-merge
+    ##############################
     print("-"*10)
     print("Sort-merge")
     print("-"*10)
@@ -232,8 +235,9 @@ if __name__ == '__main__':
     print('Lecture :',r1,'/ Ecriture :',w1)
     print("--")
     print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)
-    
-    #cartesian
+    ##############################
+    #cartesien
+    ##############################
     print("-"*10)
     print("Cartesian")
     print("-"*10)
@@ -248,7 +252,10 @@ if __name__ == '__main__':
     print('Lecture :',r1,'/ Ecriture :',w1)
     print("--")
     print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)
+
+    ##############################
     #hachage
+    ##############################
     print("-"*10)
     print("Simple Hash")
     print("-"*10)
