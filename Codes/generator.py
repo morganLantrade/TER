@@ -69,73 +69,49 @@ def generate_db(Rsize,Ssize,selectivity,double=False):
 
     R=[]
     S=[]
+
+    switch=False
+
+    if Rsize>Ssize:
+        Rsize,Ssize=Ssize,Rsize
+        switch=True
+
     if double:
-        if Rsize<=Ssize:
-            RY=[random.randint(1,Rsize) for _ in range(Rsize)]
-            uniqueRY=list(set(RY))
-            
-            relation=int(Rsize*selectivity) 
+        RY=[random.randint(1,Rsize) for _ in range(Rsize)]
+        uniqueRY=list(set(RY))
+        
+        relation=int(Rsize*selectivity) 
 
-            #on récupere les Y en communs aux hasard
-            SY=[random.sample(uniqueRY,1)[0] for _ in range(relation)]
+        #on récupere les Y en communs aux hasard
+        SY=[random.sample(uniqueRY,1)[0] for _ in range(relation)]
 
-            #on récupere des y inexistants dans R de facon aléatoire et uniforme
-            L=[random.randint(-(Ssize//2),0) for _ in range((Ssize//2)+1)]
-            L+=[random.randint(Rsize+1,Rsize+(Ssize//2)) for _ in range((Ssize//2)+1)]
+        #on récupere des y inexistants dans R de facon aléatoire et uniforme
+        L=[random.randint(-(Ssize//2),0) for _ in range((Ssize//2)+1)]
+        L+=[random.randint(Rsize+1,Rsize+(Ssize//2)) for _ in range((Ssize//2)+1)]
 
-            SY+=random.sample(L,Ssize-relation) 
-            random.shuffle(SY)
-
-        else:
-            SY=[random.randint(1,Ssize) for _ in range(Ssize)]
-            uniqueSY=list(set(SY))
-            
-            relation=int(Ssize*selectivity) 
-
-            #on récupere les Y en communs aux hasard
-            RY=[random.sample(uniqueSY,1)[0] for _ in range(relation)]
-
-            #on récupere des y inexistants dans R de facon aléatoire et uniforme
-            L=[random.randint(-(Rsize//2),0) for _ in range((Rsize//2)+1)]
-            L+=[random.randint(Ssize+1,Ssize+(Rsize//2)) for _ in range((Rsize//2)+1)]
-
-            RY+=random.sample(L,Rsize-relation) 
-            random.shuffle(RY)
+        SY+=random.sample(L,Ssize-relation) 
+        random.shuffle(SY)
 
     else:
-        if Rsize<=Ssize:
-            RY=[i for i in range(1,Rsize+1)]
-            random.shuffle(RY)
+        RY=[i for i in range(1,Rsize+1)]
+        random.shuffle(RY)
 
-            relation=int(Rsize*selectivity) 
+        relation=int(Rsize*selectivity) 
 
-            #on récupere les Y en communs aux hasard
-            SY=random.sample(RY,relation)
+        #on récupere les Y en communs aux hasard
+        SY=random.sample(RY,relation)
 
-            #on récupere des y inexistants dans R de facon aléatoire et uniforme
+        #on récupere des y inexistants dans R de facon aléatoire et uniforme
 
-            L=[i for i in range(-Ssize,1)]
-            L+=[i for i in range(Rsize+1,Rsize+Ssize+1)]
+        L=[i for i in range(-Ssize,1)]
+        L+=[i for i in range(Rsize+1,Rsize+Ssize+1)]
 
-            SY+=random.sample(L,Ssize-relation) 
-            random.shuffle(SY)
-        else:
-            SY=[i for i in range(1,Ssize+1)]
-            random.shuffle(SY)
+        SY+=random.sample(L,Ssize-relation) 
+        random.shuffle(SY)
 
-            relation=int(Ssize*selectivity) 
-
-            #on récupere les Y en communs aux hasard
-            RY=random.sample(SY,relation)
-
-            #on récupere des y inexistants dans R de facon aléatoire et uniforme
-
-            L=[i for i in range(-Rsize,1)]
-            L+=[i for i in range(Ssize+1,Ssize+Rsize+1)]
-
-            RY+=random.sample(L,Rsize-relation) 
-            random.shuffle(RY)
-
+    if switch:
+        RY,SY=SY,RY
+        Rsize,Ssize=Ssize,Rsize
 
    
     #création des tables
@@ -153,53 +129,10 @@ def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not"):
     return nb_tuples,nb_pages
 
 
-def generate_db_old(N,selectivity,double=False):
-    '''Renvoi deux dataframe correspondant aux tables R(X,Y) et S(Y,Z)
-    N : nombre d'élements dans chaque table
-    selectivity : compris entre 0 et 1 , permet de déterminer le pourcentage
-                  d'Y en communs de la table S et celle de R
-    double : doublon possible ou non
-    '''
-    relation=int(N*selectivity) 
-    R=[]
-    S=[]
-    if double:
-        RY=[random.randint(1,N) for _ in range(N)]
-        uniqueRY=list(set(RY))
-
-        #on récupere les Y en communs aux hasard
-        SY=[random.sample(uniqueRY,1)[0] for _ in range(relation)]
-
-        #on récupere des y inexistants dans R de facon aléatoire et uniforme
-        L=[random.randint(-N,0) for _ in range(N)]
-        L+=[random.randint(N+1,2*N) for _ in range(N)]
-    else:
-        RY=[i for i in range(1,N+1)]
-        random.shuffle(RY)
-
-        #on récupere les Y en communs aux hasard
-        SY=random.sample(RY,relation)
-
-        #on récupere des y inexistants dans R de facon aléatoire et uniforme
-        L=[i for i in range(-N+1,1)]
-        L+=[i for i in range(N+1,2*N+1)]
-
-    SY+=random.sample(L,N-relation) 
-    random.shuffle(SY)
-   
-    #création des tables
-    for i in range(N):
-        R.append((i+1,RY[i]))
-        S.append((SY[i],i+1))
-    R=pd.DataFrame(R,columns=['X','Y'])
-    S=pd.DataFrame(S,columns=['Y','Z'])
-    return R,S
-
-
-
 def sort_merge_join(R,S):
     '''Renvoi un inner join des tables R et S en utilisant un algorithme de tri fusion'''
-    N=len(R)
+    n=len(R)
+    m=len(S)
     # Tri des deux tables au préalable
     
     R,read1,written1=merge_sort(R.values.tolist(),1)
@@ -211,9 +144,9 @@ def sort_merge_join(R,S):
     iS=0
     written=0
     read=2 #les deux premier Y
-    while iR<N :
+    while iR<n :
         read+=1 # le prochain Y
-        if iS==len(S) :
+        if iS==m :
             if R['Y'].get(iR+1)==S['Y'].get(iS-1) :
                 iS-=1
             
@@ -329,8 +262,8 @@ def hash_join(R,S,hash_function=fnv_1a_hash_numeric):
 
 if __name__ == '__main__':
     
-    Rsize=200000
-    Ssize=20
+    Rsize=20
+    Ssize=10
     selectivity=0.8
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     a,b=number_of_pages(R,32,1024)
@@ -342,7 +275,7 @@ if __name__ == '__main__':
     print("Taille de S:")
     print("Tuples par page : ",a)
     print("Nombre de pages : ",b)
-    '''##############################
+    ##############################
     #sort-merge
     ##############################
     print("-"*10)
@@ -393,4 +326,4 @@ if __name__ == '__main__':
     print("Post-Traitement:\n")
     print('Lecture :',r1,'/ Ecriture :',w1)
     print("--")
-    print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)'''
+    print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)
