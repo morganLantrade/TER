@@ -58,7 +58,96 @@ def merge(left, right,i):
     reads += len(left) + len(right)
     return merged, reads, writes
 
-def generate_db(N,selectivity,double=False):
+def generate_db(Rsize,Ssize,selectivity,double=False):
+    '''Renvoi deux dataframe correspondant aux tables R(X,Y) et S(Y,Z)
+    N : nombre d'élements dans chaque table
+    selectivity : compris entre 0 et 1 , permet de déterminer le pourcentage
+                  d'Y en communs de la table S et celle de R
+    double : doublon possible ou non
+    '''
+
+    R=[]
+    S=[]
+    if double:
+        if Rsize<=Ssize:
+            RY=[random.randint(1,Rsize) for _ in range(Rsize)]
+            uniqueRY=list(set(RY))
+            
+            relation=int(Rsize*selectivity) 
+
+            #on récupere les Y en communs aux hasard
+            SY=[random.sample(uniqueRY,1)[0] for _ in range(relation)]
+
+            #on récupere des y inexistants dans R de facon aléatoire et uniforme
+            L=[random.randint(-(Ssize//2),0) for _ in range((Ssize//2)+1)]
+            L+=[random.randint(Rsize+1,Rsize+(Ssize//2)) for _ in range((Ssize//2)+1)]
+
+            SY+=random.sample(L,Ssize-relation) 
+            random.shuffle(SY)
+
+        else:
+            SY=[random.randint(1,Ssize) for _ in range(Ssize)]
+            uniqueSY=list(set(SY))
+            
+            relation=int(Ssize*selectivity) 
+
+            #on récupere les Y en communs aux hasard
+            RY=[random.sample(uniqueSY,1)[0] for _ in range(relation)]
+
+            #on récupere des y inexistants dans R de facon aléatoire et uniforme
+            L=[random.randint(-(Rsize//2),0) for _ in range((Rsize//2)+1)]
+            L+=[random.randint(Ssize+1,Ssize+(Rsize//2)) for _ in range((Rsize//2)+1)]
+
+            RY+=random.sample(L,Rsize-relation) 
+            random.shuffle(RY)
+
+    else:
+        if Rsize<=Ssize:
+            RY=[i for i in range(1,Rsize+1)]
+            random.shuffle(RY)
+
+            relation=int(Rsize*selectivity) 
+
+            #on récupere les Y en communs aux hasard
+            SY=random.sample(RY,relation)
+
+            #on récupere des y inexistants dans R de facon aléatoire et uniforme
+
+            L=[i for i in range(-Ssize,1)]
+            L+=[i for i in range(Rsize+1,Rsize+Ssize+1)]
+
+            SY+=random.sample(L,Ssize-relation) 
+            random.shuffle(SY)
+        else:
+            SY=[i for i in range(1,Ssize+1)]
+            random.shuffle(SY)
+
+            relation=int(Ssize*selectivity) 
+
+            #on récupere les Y en communs aux hasard
+            RY=random.sample(SY,relation)
+
+            #on récupere des y inexistants dans R de facon aléatoire et uniforme
+
+            L=[i for i in range(-Rsize,1)]
+            L+=[i for i in range(Ssize+1,Ssize+Rsize+1)]
+
+            RY+=random.sample(L,Rsize-relation) 
+            random.shuffle(RY)
+
+
+   
+    #création des tables
+    for i in range(Rsize):
+        R.append((i+1,RY[i]))
+    for i in range(Ssize):
+        S.append((SY[i],i+1))
+    R=pd.DataFrame(R,columns=['X','Y'])
+    S=pd.DataFrame(S,columns=['Y','Z'])
+    return R,S
+
+
+def generate_db_old(N,selectivity,double=False):
     '''Renvoi deux dataframe correspondant aux tables R(X,Y) et S(Y,Z)
     N : nombre d'élements dans chaque table
     selectivity : compris entre 0 et 1 , permet de déterminer le pourcentage
@@ -102,12 +191,9 @@ def generate_db(N,selectivity,double=False):
 
 
 
-
-
-
-def join_merge_sort(R,S):
+def sort_merge_join(R,S):
     '''Renvoi un inner join des tables R et S en utilisant un algorithme de tri fusion'''
-    n=len(R)
+    N=len(R)
     # Tri des deux tables au préalable
     
     R,read1,written1=merge_sort(R.values.tolist(),1)
@@ -121,7 +207,7 @@ def join_merge_sort(R,S):
     read=2 #les deux premier Y
     while iR<N :
         read+=1 # le prochain Y
-        if iS==N :
+        if iS==len(S) :
             if R['Y'].get(iR+1)==S['Y'].get(iS-1) :
                 iS-=1
             
@@ -237,10 +323,11 @@ def hash_join(R,S,hash_function=fnv_1a_hash_numeric):
 
 if __name__ == '__main__':
     
-    N=10
-    selectivity=1
-    R,S=generate_db(N,selectivity,double=True)
-    
+    Rsize=10
+    Ssize=20
+    selectivity=0.8
+    R,S=generate_db(Rsize,Ssize,selectivity,double=True)
+
     ##############################
     #sort-merge
     ##############################
@@ -248,7 +335,7 @@ if __name__ == '__main__':
     print("Sort-merge")
     print("-"*10)
     
-    A,r0,w0,r1,w1=join_merge_sort(R,S)
+    A,r0,w0,r1,w1=sort_merge_join(R,S)
     print(A)
     print("----")
     print("Pre-Traitement:\n")
