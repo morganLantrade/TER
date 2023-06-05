@@ -1,5 +1,6 @@
 import random
 import pandas as pd
+import math
 
 def merge_sort(arr,i):
     '''Fonction qui appelle la fonction recursive merge qui renvoie la liste arr triée 
@@ -145,6 +146,11 @@ def generate_db(Rsize,Ssize,selectivity,double=False):
     R=pd.DataFrame(R,columns=['X','Y'])
     S=pd.DataFrame(S,columns=['Y','Z'])
     return R,S
+
+def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not"):
+    nb_tuples= size_of_page//size_of_tuple
+    nb_pages= math.ceil(len(dataframe.index)/nb_tuples)
+    return nb_tuples,nb_pages
 
 
 def generate_db_old(N,selectivity,double=False):
@@ -323,12 +329,20 @@ def hash_join(R,S,hash_function=fnv_1a_hash_numeric):
 
 if __name__ == '__main__':
     
-    Rsize=10
+    Rsize=200000
     Ssize=20
     selectivity=0.8
-    R,S=generate_db(Rsize,Ssize,selectivity,double=True)
-
-    ##############################
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    a,b=number_of_pages(R,32,1024)
+    print("Taille de R:")
+    print("Tuples par page : ",a)
+    print("Nombre de pages : ",b)
+    print("---------")
+    a,b=number_of_pages(S,32,1024)
+    print("Taille de S:")
+    print("Tuples par page : ",a)
+    print("Nombre de pages : ",b)
+    '''##############################
     #sort-merge
     ##############################
     print("-"*10)
@@ -379,4 +393,4 @@ if __name__ == '__main__':
     print("Post-Traitement:\n")
     print('Lecture :',r1,'/ Ecriture :',w1)
     print("--")
-    print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)
+    print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)'''
