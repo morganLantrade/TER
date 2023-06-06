@@ -2,30 +2,26 @@ import random
 import pandas as pd
 import math
 
-def merge_sort(arr,i):
+def sort_merge(arr,i,memory,tuples_per_page):
     '''Fonction qui appelle la fonction recursive merge qui renvoie la liste arr triée 
     et le nombre de lecture et ecriture dans la memoire'''
     read_count = 0
-    write_count = 0
 
     if len(arr) <= 1:
-        return arr, read_count, write_count
-
+        return arr, read_count
     mid = len(arr) // 2
     left_half = arr[:mid]
     right_half = arr[mid:]
 
-    left_half, left_reads, left_writes = merge_sort(left_half,i)
-    right_half, right_reads, right_writes = merge_sort(right_half,i)
+    left_half, left_reads, left_writes = sort_merge(left_half,i)
+    right_half, right_reads, right_writes = sort_merge(right_half,i)
 
     read_count += left_reads + right_reads
-    write_count += left_writes + right_writes
 
     sorted_arr, merge_reads, merge_writes = merge(left_half, right_half,i)
     read_count += merge_reads
-    write_count += merge_writes
 
-    return sorted_arr, read_count, write_count
+    return sorted_arr, math.ceil(len(arr)/tuples_per_page)
 
 
 def merge(left, right,i):
@@ -96,7 +92,7 @@ def generate_db(Rsize,Ssize,selectivity,double=False):
         RY=[i for i in range(1,Rsize+1)]
         random.shuffle(RY)
 
-        relation=int(Rsize*selectivity) 
+        relation=math.ceil(Rsize*selectivity) 
 
         #on récupere les Y en communs aux hasard
         SY=random.sample(RY,relation)
@@ -142,57 +138,58 @@ def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not",size_key_in
     return nb_pages,Idx
 
 
-def sort_merge_join(R,S):
+def sort_merge_join(R,S,selectivity,memory,size_of_tuple,size_of_page):
     '''Renvoi un inner join des tables R et S en utilisant un algorithme de tri fusion'''
+
     n=len(R)
     m=len(S)
-    # Tri des deux tables au préalable
+
+    ##Theoric##
+    R_pages,_= number_of_pages(R,size_of_tuple,size_of_page)
+    S_pages,_=number_of_pages(S,size_of_tuple,size_of_page)
+    tuples_per_page= size_of_page//size_of_tuple
     
-    R,read1,written1=merge_sort(R.values.tolist(),1)
-    S,read2,written2=merge_sort(S.values.tolist(),0)
+    #Build
+    read_build_th = R_pages*(1+math.ceil(math.log(math.ceil(R_pages/memory),memory-1)))+S_pages*(1+math.ceil(math.log(math.ceil(S_pages/memory),memory-1)))
+    written_build_th = read_build_th
+
+    #Probe
+    read_probe_th=R_pages+S_pages
+    write_probe_th=math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
+
+    # A implementer
+    read_build_exp=read_build_th
+    written_build_exp = written_build_th
+
+    # Tri des deux tables au préalable
+    R,read1,written1=sort_merge(R.values.tolist(),1,memory,tuples_per_page)
+    S,read2,written2=sort_merge(S.values.tolist(),0,memory,tuples_per_page)
     R=pd.DataFrame(R,columns=['X','Y'])
     S=pd.DataFrame(S,columns=['Y','Z'])
     T=[]
     iR=0
     iS=0
     written=0
-    read=2 #les deux premier Y
-    while iR<n :
-        read+=1 # le prochain Y
-        if iS==m :
-            if R['Y'].get(iR+1)==S['Y'].get(iS-1) :
-                iS-=1
-            
-                while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
-                    iS-=1
-                    read+=1
-
-                iS+=1
-                iR+=1
-                read+=2 #on incrémente des deux cotes
-                
-            else :
-                
-                return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
-        elif R['Y'].get(iR)==S['Y'].get(iS): 
+    while iR<n and iS<m:
+        if R['Y'].get(iR)==S['Y'].get(iS): 
             T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
             written+=1
             iS+=1
+            iR+=1
             
         elif R['Y'].get(iR)>S['Y'].get(iS):
             iS+=1
             
         else:
-            iS-=1
-            
-            while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
-                iS-=1
-                read+=1
-
-            iS+=1
             iR+=1
-            read+=2 #on incrémente des deux cotes
-    return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
+    
+    read_probe_exp=math.ceil(iR/tuples_per_page)+math.ceil(iS/tuples_per_page)
+    written_probe_exp=math.ceil(written/tuples_per_page)
+
+    T=pd.DataFrame(T,columns=['X','Y','Z'])
+    return T,read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read_probe_exp,written_probe_exp
+
+    #return ,read1+read2,written1+written2,read,written
     
 def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
     '''Renvoi un  join des tables R et S en utilisant un algorithme de produit cartésien par block'''
@@ -201,11 +198,11 @@ def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
     
     ##Theoric##
     R_pages,_= number_of_pages(R,size_of_tuple,size_of_page)
-    S_pages,_=number_of_pages(S,size_of_tuple,size_of_page)
+    S_pages,_= number_of_pages(S,size_of_tuple,size_of_page)
     tuples_per_page= size_of_page//size_of_tuple
     b=memory-2 #taille bloc
     th_read= R_pages  + S_pages*math.ceil(R_pages/b)
-    th_written= math.ceil(int(len(R)*selectivity)/tuples_per_page)
+    th_written= math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
     
         
     ##Experiment
@@ -253,7 +250,7 @@ def cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,si
     
     
     read_probe_th = R_pages + len(R)*(n+1) + read  #niveau a charger + lecture effective de S sur le disque
-    write_probe_th = written= math.ceil(int(len(R)*selectivity)/tuples_per_page)
+    write_probe_th = written= math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
     
 
 
@@ -357,7 +354,7 @@ def test_cartesian_product(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_
     print('Lecture :',exp_read,'/ Ecriture :',exp_written)
     print("--")
 
-def test_cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index):
+def test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index):
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read,written=cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
     print("-"*10)
@@ -378,14 +375,53 @@ def test_cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_pa
     print('Lecture :',read,'/ Ecriture :',written)
     print("---")
     
+def test_sort_merge_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page):
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    
+    ##############################
+    #sort-merge
+    ##############################
+    print("-"*10)
+    print("Sort-merge")
+    print("-"*10)
+    
+    T,read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read_probe_exp,written_probe_exp=sort_merge_join(R,S,selectivity,memory,size_of_tuple,size_of_page)
+    print("R")
+    print(R)
+    print("*"*5)
+    print("S)")
+    print(S)
+    print("*"*5)
+    print("T")
+    print(T)
+    print("----") 
+    print("Theorique Build")
+    print('Lecture :',read_build_th,'/ Ecriture :',written_build_th)
+    print("----")
+    print("Theorique Probe")
+    print('Lecture :',read_probe_th,'/ Ecriture :',write_probe_th)
+    print("----")
+    print("Experimental Build: \n")
+    print('Lecture :',read_build_exp,'/ Ecriture :',written_build_exp)
+    print("----")
+    print("Experimental Probe: \n")
+    print('Lecture :',read_probe_exp,'/ Ecriture :',written_probe_exp)
+    print("---")
 
+    
 if __name__ == '__main__':
     
-    Rsize=1000
-    Ssize=2000
-    selectivity=0.8
+    Rsize=10
+    Ssize=20
+    selectivity=1
+    memory=10
+    size_of_page=1024
+    size_of_tuple=32
+    size_key_index=8
     #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
-    test_cartesian_product_index(Rsize,Ssize,selectivity=0.25,memory=7,size_of_tuple=32,size_of_page=1024,size_key_index=8)
+    #test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
+    test_sort_merge_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
+
     '''
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     b,c=number_of_pages(R,32,1024)
@@ -451,3 +487,46 @@ if __name__ == '__main__':
     print('Lecture :',r1,'/ Ecriture :',w1)
     print("--")
     print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)'''
+
+
+
+#algo sort_merge doublon
+'''
+while iR<n :
+        read+=1 # le prochain Y
+        if iS==m :
+            if R['Y'].get(iR+1)==S['Y'].get(iS-1) :
+                iS-=1
+            
+                while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
+                    iS-=1
+                    read+=1
+
+                iS+=1
+                iR+=1
+                read+=2 #on incrémente des deux cotes
+                
+            else :
+                
+                return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
+        elif R['Y'].get(iR)==S['Y'].get(iS): 
+            T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
+            written+=1
+            iS+=1
+            
+        elif R['Y'].get(iR)>S['Y'].get(iS):
+            iS+=1
+            
+        else:
+            iS-=1
+            
+            while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
+                iS-=1
+                read+=1
+
+            iS+=1
+            iR+=1
+            read+=2 #on incrémente des deux cotes
+
+    T=pd.DataFrame(T,columns=['X','Y','Z'])
+'''
