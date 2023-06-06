@@ -123,10 +123,23 @@ def generate_db(Rsize,Ssize,selectivity,double=False):
     S=pd.DataFrame(S,columns=['Y','Z'])
     return R,S
 
-def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not"):
+def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not",size_key_index=8):
+    '''Renvoie le nombre de pages de la table et la taille des différents niveau de l'index si index est B-arbre'''
+    total_tuples=len(dataframe.index)
+    Idx=dict()
     nb_tuples= size_of_page//size_of_tuple
-    nb_pages= math.ceil(len(dataframe.index)/nb_tuples)
-    return nb_tuples,nb_pages
+    nb_pages= math.ceil(total_tuples/nb_tuples)
+        
+    if index=="B-arbre":
+        i=0
+        nb_tuples= size_of_page//(size_of_tuple+size_key_index)
+        nb_pages_idx= math.ceil(total_tuples/nb_tuples)
+        while nb_pages_idx>1:
+            Idx[i]=nb_pages_idx
+            nb_pages_idx= math.ceil(nb_pages_idx/nb_tuples)
+            i+=1
+        Idx[i]=1 #dernier niveau
+    return nb_pages,Idx
 
 
 def sort_merge_join(R,S):
@@ -181,21 +194,32 @@ def sort_merge_join(R,S):
             read+=2 #on incrémente des deux cotes
     return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
     
-def cartesian_product(R,S):
+def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
     '''Renvoi un inner join des tables R et S en utilisant un algorithme de produit cartésien simple'''
+    assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
+    
+    ##Theoric##
+    R_pages,_= number_of_pages(R,size_of_tuple,size_of_page)
+    S_pages,_=number_of_pages(S,size_of_tuple,size_of_page)
+    tuples_per_page= size_of_page//size_of_tuple
+    th_read= R_pages+S_pages*len(R)  
+    th_written= math.ceil(int(len(R)*selectivity)/tuples_per_page)
+    
+    ##Experiment
     n=len(R)
     m=len(S)
     T=[]
-    written=0
-    read=0
+    written=1 # dans tous les cas on ecrira sur au moins une page output
+    read=0 # on charge la premiere page R 
     for i in range(n):
-        read+=1
+        read+= int(i%tuples_per_page==0) #page suivante de R 
         for j in range(m):
-            read+=1
+            read+=  int(j%tuples_per_page==0) #page suivante de S
             if R['Y'].get(i)==S['Y'].get(j):
                 T.append((R['X'].get(i),R['Y'].get(i),S['Z'].get(j)))
-                written+=1
-    return pd.DataFrame(T,columns=['X','Y','Z']),0,0,read,written
+                written+= int(len(T)%tuples_per_page==0)  #page suivante de T
+                
+    return pd.DataFrame(T,columns=['X','Y','Z']),th_read,th_written,read,written
 
 
 def hash1(x):
@@ -256,25 +280,48 @@ def hash_join(R,S,hash_function=fnv_1a_hash_numeric):
 
 
 
-
-
-
+def test_cartesian_product(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page):
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    T,th_read,th_written,exp_read,exp_written=cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page)
+    print("-"*10)
+    print("Cartesian")
+    print("-"*10)
+    print("R")
+    print(R)
+    print("*"*5)
+    print("S)")
+    print(S)
+    print("*"*5)
+    print("T")
+    print(T)
+    print("----")
+    print("Entrée/Sortie theorique : \n")
+    print('Lecture :',th_read,'/ Ecriture :',th_written)
+    print("----")
+    print("Entrée/Sortie experimentale: \n")
+    print('Lecture :',exp_read,'/ Ecriture :',exp_written)
+    print("--")
+    
 
 if __name__ == '__main__':
     
     Rsize=20
-    Ssize=10
+    Ssize=200000
     selectivity=0.8
+    test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
+    '''
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    a,b=number_of_pages(R,32,1024)
+    b,c=number_of_pages(R,32,1024)
     print("Taille de R:")
-    print("Tuples par page : ",a)
     print("Nombre de pages : ",b)
+    print("Index : ",c)
+
     print("---------")
-    a,b=number_of_pages(S,32,1024)
+    b,c=number_of_pages(S,32,1024,"B-arbre",32)
     print("Taille de S:")
-    print("Tuples par page : ",a)
     print("Nombre de pages : ",b)
+    print("Index : ",c)
+    
     ##############################
     #sort-merge
     ##############################
@@ -326,4 +373,4 @@ if __name__ == '__main__':
     print("Post-Traitement:\n")
     print('Lecture :',r1,'/ Ecriture :',w1)
     print("--")
-    print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)
+    print('Total : Lecture : ',r0+r1,' / Ecriture : ',w0+w1)'''
