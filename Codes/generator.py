@@ -132,7 +132,7 @@ def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not",size_key_in
         
     if index=="B-arbre":
         i=0
-        nb_tuples= size_of_page//(size_of_tuple+size_key_index)
+        nb_tuples= size_of_page//(size_of_tuple//2+size_key_index) #on garde que l'attribut Y
         nb_pages_idx= math.ceil(total_tuples/nb_tuples)
         while nb_pages_idx>1:
             Idx[i]=nb_pages_idx
@@ -195,7 +195,7 @@ def sort_merge_join(R,S):
     return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
     
 def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
-    '''Renvoi un inner join des tables R et S en utilisant un algorithme de produit cartésien simple'''
+    '''Renvoi un  join des tables R et S en utilisant un algorithme de produit cartésien par block'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
     
     
@@ -226,6 +226,54 @@ def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
                 written+= int(len(T)%tuples_per_page==0)  #page suivante de T
                 
     return pd.DataFrame(T,columns=['X','Y','Z']),th_read,th_written,read,written
+
+def cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index):
+    '''Renvoi une simulation memoire d'un join des tables R et S en utilisant un algorithme de produit cartésien indexe sur S'''
+    assert memory>=4, "Erreur : La memoire doit contenir au moins 4 pages"
+    
+    ##Theoric##
+    R_pages,_= number_of_pages(R,size_of_tuple,size_of_page)
+    S_pages,idx=number_of_pages(S,size_of_tuple,size_of_page,"B-arbre",size_key_index)
+    tuples_per_page= size_of_page//size_of_tuple
+    
+    #Build
+    read_build_th = S_pages 
+    written_build_th = sum(idx.values()) #nombre pages index
+
+    #Probe
+    n=len(idx) # nombre de niveau a charger regulierement
+    free_space=memory-2 
+    read=0
+    #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
+    while free_space-idx[(n-1)]>=1 and n>0:  
+        free_space-= idx[(n-1)]
+        read+=idx[(n-1)] # pages des niveaux que l'on charge qu'une seule fois
+        n-=1
+    
+    
+    
+    read_probe_th = R_pages + len(R)*(n+1) + read  #niveau a charger + lecture effective de S sur le disque
+    write_probe_th = written= math.ceil(int(len(R)*selectivity)/tuples_per_page)
+    
+
+
+    ##Experiment
+    print("Pages par niveau de l'index :",idx)
+
+    # A implementer un index B-arbre ou juste simulation theorique de l'index
+    read_build_exp=read_build_th
+    written_build_exp = written_build_th
+
+    
+    for i in range(len(R)):
+        if i%tuples_per_page==0: #page suivante de R 
+            read+=1 
+        j=0
+        while j<= n: #on ne charge que les niveaux a charger
+            read +=1 
+            j+=1 
+    
+    return read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read,written
 
 
 
@@ -301,21 +349,43 @@ def test_cartesian_product(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_
     print("*"*5)
     print("T")
     print(T)
-    print("----")
+    print("----") 
     print("Entrée/Sortie theorique : \n")
     print('Lecture :',th_read,'/ Ecriture :',th_written)
     print("----")
     print("Entrée/Sortie experimentale: \n")
     print('Lecture :',exp_read,'/ Ecriture :',exp_written)
     print("--")
+
+def test_cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index):
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read,written=cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
+    print("-"*10)
+    print("Cartesian")
+    print("-"*10)
+        
+    print("----") 
+    print("Theorique Build")
+    print('Lecture :',read_build_th,'/ Ecriture :',written_build_th)
+    print("----")
+    print("Theorique Probe")
+    print('Lecture :',read_probe_th,'/ Ecriture :',write_probe_th)
+    print("----")
+    print("Experimental Build: \n")
+    print('Lecture :',read_build_exp,'/ Ecriture :',written_build_exp)
+    print("----")
+    print("Experimental Probe: \n")
+    print('Lecture :',read,'/ Ecriture :',written)
+    print("---")
     
 
 if __name__ == '__main__':
     
-    Rsize=20
-    Ssize=200000
+    Rsize=1000
+    Ssize=2000
     selectivity=0.8
-    test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
+    #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
+    test_cartesian_product_index(Rsize,Ssize,selectivity=0.25,memory=7,size_of_tuple=32,size_of_page=1024,size_key_index=8)
     '''
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     b,c=number_of_pages(R,32,1024)
