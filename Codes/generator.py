@@ -204,7 +204,7 @@ def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
     S_pages,_=number_of_pages(S,size_of_tuple,size_of_page)
     tuples_per_page= size_of_page//size_of_tuple
     b=memory-2 #taille bloc
-    th_read= math.ceil(R_pages/b)  +S_pages*len(R)
+    th_read= R_pages  + S_pages*math.ceil(R_pages/b)
     th_written= math.ceil(int(len(R)*selectivity)/tuples_per_page)
     
         
@@ -213,13 +213,14 @@ def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
     m=len(S)
     T=[]
     written=1 # dans tous les cas on ecrira sur au moins une page output
-    read=0 # on charge la premiere page R 
+    read=0 
 
     for i in range(n):
-        if i%(tuples_per_page*b)==0:
-            read+=1 #page/bloc suivant de R 
+        if i%tuples_per_page==0: #page suivante de R 
+            read+=1 
         for j in range(m):
-            read+=  int(j%tuples_per_page==0) #page suivante de S
+            if (i%(tuples_per_page*b)==0) and (j%tuples_per_page==0):  #bloc de b pages suivant donc on compte les pages de S lues
+                read+=+1
             if R['Y'].get(i)==S['Y'].get(j):
                 T.append((R['X'].get(i),R['Y'].get(i),S['Z'].get(j)))
                 written+= int(len(T)%tuples_per_page==0)  #page suivante de T
@@ -314,7 +315,7 @@ if __name__ == '__main__':
     Rsize=20
     Ssize=200000
     selectivity=0.8
-    test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=64,size_of_tuple=32,size_of_page=1024)
+    test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
     '''
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     b,c=number_of_pages(R,32,1024)
