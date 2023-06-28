@@ -1,6 +1,7 @@
 import random
 import pandas as pd
 import math
+import os
 
 def sort_merge(arr,i,memory,tuples_per_page):
     '''Fonction qui appelle la fonction recursive merge qui renvoie la liste arr triée 
@@ -54,6 +55,20 @@ def merge(left, right,i):
 
     reads += len(left) + len(right)
     return merged, reads, writes
+
+def db_to_file(db,pageSize,folderName,dbName):
+
+    n=len(db.index)
+    nb_of_files=n//pageSize
+    if not os.path.exists('Data/'+folderName):
+        os.makedirs('Data/'+folderName)
+    for i in range(nb_of_files):
+        db_temp=db.loc[i*pageSize:(i+1)*pageSize-1]
+        db_temp.to_csv('Data/'+folderName+"/"+dbName+"_"+str(i+1)+".csv",sep=',',index=False)
+    if (n%pageSize!=0):
+        db_temp=db.loc[nb_of_files*pageSize:]
+        db_temp.to_csv('Data/'+folderName+"/"+dbName+"_"+str(nb_of_files+1)+".csv",sep=',',index=False)
+
 
 def generate_db(Rsize,Ssize,selectivity,double=False):
     '''Renvoi deux dataframe correspondant aux tables R(X,Y) et S(Y,Z)
@@ -191,6 +206,38 @@ def sort_merge_join(R,S,selectivity,memory,size_of_tuple,size_of_page):
 
     #return ,read1+read2,written1+written2,read,written
     
+def cartesian_product_file(folderName,memory,pageSize):
+    assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
+
+    nbPageR=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
+    nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+
+    b=memory-2 #taille bloc
+
+    T=[]
+    if not os.path.exists('Data/'+folderName+"_cp"):
+        os.makedirs('Data/'+folderName+"_cp")
+    nbPageT=0
+    for i in range(nbPageR):
+        R=pd.read_csv('Data/'+folderName+"/R_"+str(i+1)+".csv")
+        for j in range (nbPageS):
+            S=pd.read_csv('Data/'+folderName+"/S_"+str(j+1)+".csv")
+            for k in range(len(R.index)):
+                for l in range(len(S.index)):
+                    if (R["Y"].get(k)==S["Y"].get(l)):
+                        T.append((R['X'].get(k),R['Y'].get(k),S['Z'].get(l)))
+                        if len(T)==pageSize:
+                            pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cp/T_"+str(nbPageT+1)+".csv",sep=',',index=False)
+                            nbPageT+=1
+                            T=[]
+    if T:
+        pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cp/T_"+str(nbPageT+1)+".csv",sep=',',index=False)
+
+
+
+
+
+
 def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
     '''Renvoi un  join des tables R et S en utilisant un algorithme de produit cartésien par block'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
@@ -455,17 +502,23 @@ def test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_p
 
 if __name__ == '__main__':
     
-    Rsize=350
+    Rsize=321
     Ssize=650
     selectivity=1
     memory=13
+    pageSize=32
     size_of_page=1024
     size_of_tuple=32
     size_key_index=8
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    cartesian_product_file("Run1",memory,pageSize)
+    #db_to_file(R,32,"Run1","R")
+    #db_to_file(S,32,"Run1","S")
+
     #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
     #test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
     #test_sort_merge_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
-    test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
+    #test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
     '''
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     b,c=number_of_pages(R,32,1024)
