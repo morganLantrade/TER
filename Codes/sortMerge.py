@@ -5,18 +5,102 @@ import os
 from tools import *
 
 
-def sort_file(folderName,memory,pageSize):
+def sort_file(folderName,memory,pageSize,dbName):
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
-    nbPageR=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    nbPage=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
 
     if not os.path.exists('Data/'+folderName+"_sorted"):
         os.makedirs('Data/'+folderName+"_sorted")
 
+    delete_file(dbName,folderName+"_sorted",)
+    nbMonotonie=0
+    passe=0
+    for i in range(0,nbPage,memory):
+        if (i==nbPage-(nbPage%memory)):
+            db=read_X_pages(folderName+"/"+dbName,(nbPage-(nbPage%memory))+1,nbPage%memory)
+            db=db.sort_values(by=['Y'])
+            db_to_file(db,pageSize,folderName+"_sorted",dbName+"0_"+str(nbPage//memory))
+            nbMonotonie+=1
+        else:
+            db=read_X_pages(folderName+"/"+dbName,i+1,memory)
+            db=db.sort_values(by=['Y'])
+            db_to_file(db,pageSize,folderName+"_sorted",dbName+"0_"+str(i//memory))
+            nbMonotonie+=1
+
+
+    while nbMonotonie!=1:
+        nbPageMonotonie=(memory*((memory-1)**passe))
+        for i in range(math.ceil(nbMonotonie/(memory-1))):
+            L=[]
+            for j in range(memory-1):
+                if nbPage!=(j+i*(memory-1))*nbPageMonotonie:
+                    if (j+i*(memory-1)==nbMonotonie-1) and ((nbPage%(memory*((memory-1)**(passe))))!=0):
+                        db=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_"+str(j+i*(memory-1)),1,nbPage%nbPageMonotonie)
+                    else:
+                        db=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_"+str(j+i*(memory-1)),1,nbPageMonotonie)
+                    L.append(db)
+            db=pd.concat(L, axis=0,ignore_index=True)
+            db=db.sort_values(by=['Y'],ignore_index=True)
+            db_to_file(db,pageSize,folderName+"_sorted",dbName+str(passe+1)+"_"+str(i))
+        nbMonotonie=math.ceil(nbMonotonie/(memory-1))
+        passe+=1
+    return passe
+
+def sort_merge_file(folderName,memory,pageSize):
     
- 
+    if not os.path.exists('Data/'+folderName+"_sm"):
+        os.makedirs('Data/'+folderName+"_sm")
+
+    delete_file("T",folderName+"_sm",)
+
+    passeR=sort_file(folderName,memory,pageSize,"R")
+    passeS=sort_file(folderName,memory,pageSize,"S")
     
+    nbPageR=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("R"+str(passeR)) in f])
+    nbPageS=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("S"+str(passeS)) in f])
+    iPageR=1
+    iPageS=1
+    iT=1
+    R=read_X_pages(folderName+"_sorted/R"+str(passeR)+"_0",iPageR,1)
+    S=read_X_pages(folderName+"_sorted/S"+str(passeS)+"_0",iPageS,1)
+    
+    iS=0
+    iR=0
+    T=[]
+    while iPageR<nbPageR+1 and iPageS<nbPageS+1:
+        while (iS<len(S.index) and iR<len(R.index)):
+            if R['Y'].get(iR)==S['Y'].get(iS): 
+                T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
+                if (len(T)==pageSize):
+                    T=pd.DataFrame(T,columns=['X','Y','Z'])
+                    T.to_csv('Data/'+folderName+"_sm/T_"+str(iT)+".csv",sep=',',index=False)
+                    iT+=1
+                    T=[]
+                iS+=1
+                iR+=1
+                
+            elif R['Y'].get(iR)>S['Y'].get(iS):
+                iS+=1
+                
+            else:
+                iR+=1
+        if iS==len(S.index):
+            iPageS+=1
+            if iPageS<=nbPageS:
+                S=read_X_pages(folderName+"_sorted/S"+str(passeS)+"_0",iPageS,1)
+                iS=0
+        else:
+            iPageR+=1
+            if iPageR<=nbPageR:
+                R=read_X_pages(folderName+"_sorted/R"+str(passeR)+"_0",iPageR,1)
+                iR=0
+    if T:
+        T=pd.DataFrame(T,columns=['X','Y','Z'])
+        T.to_csv('Data/'+folderName+"_sm/T_"+str(iT)+".csv",sep=',',index=False)
+
+        
+
 
 def sort_merge(arr,i,memory,tuples_per_page):
     '''Fonction qui appelle la fonction recursive merge qui renvoie la liste arr triée 

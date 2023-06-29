@@ -32,10 +32,10 @@ def db_to_file(db,pageSize,folderName,dbName):
 
     delete_file(dbName,folderName)    
     for i in range(nb_of_files):
-        db_temp=db.loc[i*pageSize:(i+1)*pageSize-1]
+        db_temp=db.iloc[i*pageSize:(i+1)*pageSize]
         db_temp.to_csv('Data/'+folderName+"/"+dbName+"_"+str(i+1)+".csv",sep=',',index=False)
     if (n%pageSize!=0):
-        db_temp=db.loc[nb_of_files*pageSize:]
+        db_temp=db.iloc[nb_of_files*pageSize:]
         db_temp.to_csv('Data/'+folderName+"/"+dbName+"_"+str(nb_of_files+1)+".csv",sep=',',index=False)
 
 def generate_db(Rsize,Ssize,selectivity,double=False):

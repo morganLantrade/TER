@@ -106,7 +106,7 @@ if __name__ == '__main__':
     Rsize=321
     Ssize=650
     selectivity=1
-    memory=40
+    memory=3
     pageSize=32
     size_of_page=1024
     size_of_tuple=32
@@ -114,8 +114,10 @@ if __name__ == '__main__':
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     #db_to_file(R,32,"Run1","R")
     #db_to_file(S,32,"Run1","S")
-    cartesian_product_file("Run1",memory,pageSize)
-    #sort_file("Run1",memory,pageSize)
+    #cartesian_product_file("Run1",memory,pageSize)
+    #sort_file("Run1",memory,pageSize,"R")
+    #sort_file("Run1",memory,pageSize,"S")
+    sort_merge_file("Run1",memory,pageSize)
 
     #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
     #test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
