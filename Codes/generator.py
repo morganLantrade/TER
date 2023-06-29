@@ -14,8 +14,17 @@ def sort_file(folderName,memory,pageSize):
         os.makedirs('Data/'+folderName+"_sorted")
  
     
-
-
+def read_X_pages(name,i,x):
+    db=pd.read_csv('Data/'+name+"_"+str(i)+".csv")
+    k=1
+    while k!=x:
+        path='Data/'+name+"_"+str(i+k)+".csv"
+        assert os.path.exists(path), f'Erreur : Le fichier {path} n existe pas'
+        db_tmp=pd.read_csv(path)
+        db=pd.concat([db, db_tmp], axis=0,ignore_index=True)
+        k+=1
+    
+    return db
     
 
 def sort_merge(arr,i,memory,tuples_per_page):
@@ -71,12 +80,21 @@ def merge(left, right,i):
     reads += len(left) + len(right)
     return merged, reads, writes
 
+def delete_file(dbName,folderName):
+    for f in os.listdir("Data/"+folderName):
+        if dbName in f:
+            os.remove("Data/"+folderName+"/"+f)
+
+    
+
 def db_to_file(db,pageSize,folderName,dbName):
 
     n=len(db.index)
     nb_of_files=n//pageSize
     if not os.path.exists('Data/'+folderName):
         os.makedirs('Data/'+folderName)
+
+    delete_file(dbName,folderName)    
     for i in range(nb_of_files):
         db_temp=db.loc[i*pageSize:(i+1)*pageSize-1]
         db_temp.to_csv('Data/'+folderName+"/"+dbName+"_"+str(i+1)+".csv",sep=',',index=False)
@@ -228,15 +246,33 @@ def cartesian_product_file(folderName,memory,pageSize):
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
 
     b=memory-2 #taille bloc
-
+    
     T=[]
-    if not os.path.exists('Data/'+folderName+"_cp"):
-        os.makedirs('Data/'+folderName+"_cp")
+    path='Data/'+folderName+"_cp"
+    
+    if not os.path.exists(path):
+        os.makedirs(path)
+    else:
+        delete_file("T",folderName+"_cp") #supprime tous les fichiers du repertoire faudra l'enleve pour faire les bonnes mesures
+    
+
     nbPageT=0
-    for i in range(nbPageR):
-        R=pd.read_csv('Data/'+folderName+"/R_"+str(i+1)+".csv")
+    i=0
+    while i<nbPageR:
+        
+        if i+b< nbPageR:
+            R=read_X_pages(folderName+"/R",i+1,b)
+        elif i==0: 
+            #cas ou tout R rentre dans la mémoire
+            R=read_X_pages(folderName+"/R",i+1,nbPageR)
+        else: 
+            #cas ou on charge les dernieres pages
+            R=read_X_pages(folderName+"/R",i+1,nbPageR%i)
+            i=nbPageR
+        i+=b
+                
         for j in range (nbPageS):
-            S=pd.read_csv('Data/'+folderName+"/S_"+str(j+1)+".csv")
+            S=read_X_pages(folderName+"/S",j+1,1)
             for k in range(len(R.index)):
                 for l in range(len(S.index)):
                     if (R["Y"].get(k)==S["Y"].get(l)):
@@ -520,16 +556,16 @@ if __name__ == '__main__':
     Rsize=321
     Ssize=650
     selectivity=1
-    memory=3
+    memory=40
     pageSize=32
     size_of_page=1024
     size_of_tuple=32
     size_key_index=8
-    #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    #db_to_file(R,32,"Run1","R")
-    #db_to_file(S,32,"Run1","S")
-    #cartesian_product_file("Run1",memory,pageSize)
-    sort_file("Run1",memory,pageSize)
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    db_to_file(R,32,"Run1","R")
+    db_to_file(S,32,"Run1","S")
+    cartesian_product_file("Run1",memory,pageSize)
+    #sort_file("Run1",memory,pageSize)
 
     #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
     #test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
