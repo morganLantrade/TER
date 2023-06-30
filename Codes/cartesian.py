@@ -63,20 +63,21 @@ def cartesian_product_file(folderName,memory,pageSize):
 
 
 
-def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
+def cartesian_product(folderName,selectivity,memory,pageSize):
     '''Renvoi les lectures et ecritures theoriques d'un algorithme de produit cartésien par block'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
     
     
     #metadonnées
-    nbPageR=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
+    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
     
      #taille bloc
     b=memory-2
     
     th_read= R_pages  + S_pages*math.ceil(R_pages/b)
-    th_written= math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
+    th_written= math.ceil(math.ceil(nbTuplesR*selectivity)/pageSize)
     
     '''    
     ##Experiment

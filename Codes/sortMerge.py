@@ -73,7 +73,7 @@ def sort_file(folderName,memory,pageSize,dbName):
     return passe
 
 def sort_merge_file(folderName,memory,pageSize):
-    '''Effectue un join de S et R contenus dans la run forldername selon la memoire et la taille de page'''
+    '''Effectue un join de S et R contenus dans la run foldername selon la memoire et la taille de page'''
     
     if not os.path.exists('Data/'+folderName+"_sm"):
         os.makedirs('Data/'+folderName+"_sm")
@@ -195,15 +195,15 @@ def merge(left, right,i):
     return merged, reads, writes
 
 
-def sort_merge_join(foldername,selectivity,memory,pageSize):
+def sort_merge_join(folderName,selectivity,memory,pageSize):
     '''Renvoi le nombre de lecture et ecriture disque theorique en utilisant un algorithme de tri fusion'''
 
    
     ##Theoric##
     #metadonnées
     R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_Pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    
+    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
     
     #Build
     read_build_th = R_pages*(1+math.ceil(math.log(math.ceil(R_pages/memory),memory-1)))+S_pages*(1+math.ceil(math.log(math.ceil(S_pages/memory),memory-1)))
@@ -211,7 +211,7 @@ def sort_merge_join(foldername,selectivity,memory,pageSize):
 
     #Probe
     read_probe_th=R_pages+S_pages
-    write_probe_th=math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
+    write_probe_th=math.ceil(math.ceil(nbTuplesR*selectivity)/pageSize)
 
     '''
 
