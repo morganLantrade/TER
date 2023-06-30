@@ -6,59 +6,90 @@ from tools import *
 
 
 def sort_file(folderName,memory,pageSize,dbName):
+    '''Effectue un tri externe du fichier dbName de la run folderName selon la memoire et la taille des pages'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
+    #metadonnee
     nbPage=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
 
     if not os.path.exists('Data/'+folderName+"_sorted"):
         os.makedirs('Data/'+folderName+"_sorted")
+    else:
+        #vide le contenu
+        delete_file(dbName,folderName+"_sorted",)
 
-    delete_file(dbName,folderName+"_sorted",)
     nbMonotonie=0
     passe=0
+
+    ###########
+    # PASSE 0 #
+    ###########
+    #parcours par bloc de taille memoire
     for i in range(0,nbPage,memory):
+        #dernier bloc
         if (i==nbPage-(nbPage%memory)):
             db=read_X_pages(folderName+"/"+dbName,(nbPage-(nbPage%memory))+1,nbPage%memory)
-            db=db.sort_values(by=['Y'])
+            #tri quicksort de tout le bloc
+            db=db.sort_values(by=['Y'],kind='quicksort')
+            #ecriture du bloc en page
             db_to_file(db,pageSize,folderName+"_sorted",dbName+"0_"+str(nbPage//memory))
             nbMonotonie+=1
+        #tous les blocs de taille memoire
         else:
             db=read_X_pages(folderName+"/"+dbName,i+1,memory)
-            db=db.sort_values(by=['Y'])
+            #tri quicksort de tout le bloc
+            db=db.sort_values(by=['Y'],kind='quicksort')
+            #ecriture du bloc en page
             db_to_file(db,pageSize,folderName+"_sorted",dbName+"0_"+str(i//memory))
             nbMonotonie+=1
 
-
-    while nbMonotonie!=1:
+    ####################
+    # PASSES SUIVANTES #
+    ####################
+    while nbMonotonie!=1: #derniere passe
         nbPageMonotonie=(memory*((memory-1)**passe))
+        #parcours des monotonies
         for i in range(math.ceil(nbMonotonie/(memory-1))):
             L=[]
+            #regroupement de memoire-1 monotonies
             for j in range(memory-1):
+                #si toutes les pages de R ont étées lues
                 if nbPage!=(j+i*(memory-1))*nbPageMonotonie:
+                    #dernier bloc de monotonies
                     if (j+i*(memory-1)==nbMonotonie-1) and ((nbPage%(memory*((memory-1)**(passe))))!=0):
                         db=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_"+str(j+i*(memory-1)),1,nbPage%nbPageMonotonie)
+                    #tous les blocs de monotonies de taille normale
                     else:
                         db=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_"+str(j+i*(memory-1)),1,nbPageMonotonie)
                     L.append(db)
             db=pd.concat(L, axis=0,ignore_index=True)
-            db=db.sort_values(by=['Y'],ignore_index=True)
+            #mergesort du bloc
+            db=db.sort_values(by=['Y'],kind='mergesort',ignore_index=True)
+            #ecriture du bloc trie en page
             db_to_file(db,pageSize,folderName+"_sorted",dbName+str(passe+1)+"_"+str(i))
+        #passe suivante
         nbMonotonie=math.ceil(nbMonotonie/(memory-1))
         passe+=1
     return passe
 
 def sort_merge_file(folderName,memory,pageSize):
+    '''Effectue un join de S et R contenus dans la run forldername selon la memoire et la taille de page'''
     
     if not os.path.exists('Data/'+folderName+"_sm"):
         os.makedirs('Data/'+folderName+"_sm")
+    else:
+        #vide le contenu
+        delete_file("T",folderName+"_sm",)
 
-    delete_file("T",folderName+"_sm",)
-
+    #Tri les fichiers sur disque et revoie le nombre de passes pour chaque relation
     passeR=sort_file(folderName,memory,pageSize,"R")
     passeS=sort_file(folderName,memory,pageSize,"S")
     
+    #metadonnees
     nbPageR=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("R"+str(passeR)) in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("S"+str(passeS)) in f])
+
+    #Initialisation
     iPageR=1
     iPageS=1
     iT=1
@@ -68,10 +99,13 @@ def sort_merge_file(folderName,memory,pageSize):
     iS=0
     iR=0
     T=[]
+    #Tant qu'on a pas fini de parcourir une relation
     while iPageR<nbPageR+1 and iPageS<nbPageS+1:
+        #Tant qu'on a pas fini un page
         while (iS<len(S.index) and iR<len(R.index)):
             if R['Y'].get(iR)==S['Y'].get(iS): 
                 T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
+                #vide le buffer si plein
                 if (len(T)==pageSize):
                     T=pd.DataFrame(T,columns=['X','Y','Z'])
                     T.to_csv('Data/'+folderName+"_sm/T_"+str(iT)+".csv",sep=',',index=False)
@@ -85,16 +119,21 @@ def sort_merge_file(folderName,memory,pageSize):
                 
             else:
                 iR+=1
+        #page S finie
         if iS==len(S.index):
             iPageS+=1
+            #si la page existe on charge la suivante
             if iPageS<=nbPageS:
                 S=read_X_pages(folderName+"_sorted/S"+str(passeS)+"_0",iPageS,1)
                 iS=0
+        #page R finie
         else:
             iPageR+=1
+            #si la page existe on charge la suivante
             if iPageR<=nbPageR:
                 R=read_X_pages(folderName+"_sorted/R"+str(passeR)+"_0",iPageR,1)
                 iR=0
+    #vide le buffer si non vide
     if T:
         T=pd.DataFrame(T,columns=['X','Y','Z'])
         T.to_csv('Data/'+folderName+"_sm/T_"+str(iT)+".csv",sep=',',index=False)
@@ -156,16 +195,15 @@ def merge(left, right,i):
     return merged, reads, writes
 
 
-def sort_merge_join(R,S,selectivity,memory,size_of_tuple,size_of_page):
-    '''Renvoi un inner join des tables R et S en utilisant un algorithme de tri fusion'''
+def sort_merge_join(foldername,selectivity,memory,pageSize):
+    '''Renvoi le nombre de lecture et ecriture disque theorique en utilisant un algorithme de tri fusion'''
 
-    n=len(R)
-    m=len(S)
-
+   
     ##Theoric##
-    R_pages,_= number_of_pages(R,size_of_tuple,size_of_page)
-    S_pages,_=number_of_pages(S,size_of_tuple,size_of_page)
-    tuples_per_page= size_of_page//size_of_tuple
+    #metadonnées
+    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
+    S_Pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    
     
     #Build
     read_build_th = R_pages*(1+math.ceil(math.log(math.ceil(R_pages/memory),memory-1)))+S_pages*(1+math.ceil(math.log(math.ceil(S_pages/memory),memory-1)))
@@ -175,9 +213,7 @@ def sort_merge_join(R,S,selectivity,memory,size_of_tuple,size_of_page):
     read_probe_th=R_pages+S_pages
     write_probe_th=math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
 
-    # A implementer
-    read_build_exp=read_build_th
-    written_build_exp = written_build_th
+    '''
 
     # Tri des deux tables au préalable
     R,read1,written1=sort_merge(R.values.tolist(),1,memory,tuples_per_page)
@@ -207,7 +243,8 @@ def sort_merge_join(R,S,selectivity,memory,size_of_tuple,size_of_page):
     T=pd.DataFrame(T,columns=['X','Y','Z'])
     return T,read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read_probe_exp,written_probe_exp
 
-    #return ,read1+read2,written1+written2,read,written
+    #return ,read1+read2,written1+written2,read,written'''
+    return read_build_th+read_probe_th,written_build_th+write_probe_th
     
 
 #algo sort_merge doublon

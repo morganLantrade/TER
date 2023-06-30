@@ -112,8 +112,8 @@ if __name__ == '__main__':
     size_of_tuple=32
     size_key_index=8
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    #db_to_file(R,32,"Run1","R")
-    #db_to_file(S,32,"Run1","S")
+    db_to_file(R,32,"Run1","R")
+    db_to_file(S,32,"Run1","S")
     #cartesian_product_file("Run1",memory,pageSize)
     #sort_file("Run1",memory,pageSize,"R")
     #sort_file("Run1",memory,pageSize,"S")

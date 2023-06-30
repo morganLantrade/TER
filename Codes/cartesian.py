@@ -5,12 +5,16 @@ import os
 from tools import *
 
 def cartesian_product_file(folderName,memory,pageSize):
+    '''Jointure cartesienne selon R et S contenu dans le folder
+    pour une mémoire centrale et une taille de page donnée'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
+    #metadonnées
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
 
-    b=memory-2 #taille bloc
+    #taille bloc
+    b=memory-2
     
     T=[]
     path='Data/'+folderName+"_cp"
@@ -18,14 +22,16 @@ def cartesian_product_file(folderName,memory,pageSize):
     if not os.path.exists(path):
         os.makedirs(path)
     else:
-        delete_file("T",folderName+"_cp") #supprime tous les fichiers du repertoire faudra l'enleve pour faire les bonnes mesures
+        #supprime tous les fichiers du repertoire run correspondant 
+        delete_file("T",folderName+"_cp") 
     
 
     nbPageT=0
     i=0
     while i<nbPageR:
-        
+
         if i+b< nbPageR:
+            #un bloc de taille b
             R=read_X_pages(folderName+"/R",i+1,b)
         elif i==0: 
             #cas ou tout R rentre dans la mémoire
@@ -37,16 +43,19 @@ def cartesian_product_file(folderName,memory,pageSize):
         i+=b
                 
         for j in range (nbPageS):
+            #charge une page de S
             S=read_X_pages(folderName+"/S",j+1,1)
             for k in range(len(R.index)):
                 for l in range(len(S.index)):
                     if (R["Y"].get(k)==S["Y"].get(l)):
                         T.append((R['X'].get(k),R['Y'].get(k),S['Z'].get(l)))
+                        #buffer plein
                         if len(T)==pageSize:
                             pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cp/T_"+str(nbPageT+1)+".csv",sep=',',index=False)
                             nbPageT+=1
                             T=[]
     if T:
+        #vide le buffer si il est non vide
         pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cp/T_"+str(nbPageT+1)+".csv",sep=',',index=False)
 
 
@@ -55,19 +64,21 @@ def cartesian_product_file(folderName,memory,pageSize):
 
 
 def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
-    '''Renvoi un  join des tables R et S en utilisant un algorithme de produit cartésien par block'''
+    '''Renvoi les lectures et ecritures theoriques d'un algorithme de produit cartésien par block'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
     
     
-    ##Theoric##
-    R_pages,_= number_of_pages(R,size_of_tuple,size_of_page)
-    S_pages,_= number_of_pages(S,size_of_tuple,size_of_page)
-    tuples_per_page= size_of_page//size_of_tuple
-    b=memory-2 #taille bloc
+    #metadonnées
+    nbPageR=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
+    nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    
+     #taille bloc
+    b=memory-2
+    
     th_read= R_pages  + S_pages*math.ceil(R_pages/b)
     th_written= math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
     
-        
+    '''    
     ##Experiment
     n=len(R)
     m=len(S)
@@ -85,7 +96,8 @@ def cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page):
                 T.append((R['X'].get(i),R['Y'].get(i),S['Z'].get(j)))
                 written+= int(len(T)%tuples_per_page==0)  #page suivante de T
                 
-    return pd.DataFrame(T,columns=['X','Y','Z']),th_read,th_written,read,written
+    return pd.DataFrame(T,columns=['X','Y','Z']),th_read,th_written,read,written'''
+    return th_read,th_written
 
 def cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index):
     '''Renvoi une simulation memoire d'un join des tables R et S en utilisant un algorithme de produit cartésien indexe sur S'''

@@ -4,6 +4,7 @@ import math
 import os
     
 def read_X_pages(name,i,x):
+    '''Retourne un dataframe correspondant au fichier name de la page i jusqu'a la page i+x'''
     db=pd.read_csv('Data/'+name+"_"+str(i)+".csv")
     k=1
     while k!=x:
@@ -17,6 +18,7 @@ def read_X_pages(name,i,x):
 
 
 def delete_file(dbName,folderName):
+    '''Supprime tous les fichiers de folrderName contenante dbNamr'''
     for f in os.listdir("Data/"+folderName):
         if dbName in f:
             os.remove("Data/"+folderName+"/"+f)
@@ -24,16 +26,19 @@ def delete_file(dbName,folderName):
     
 
 def db_to_file(db,pageSize,folderName,dbName):
+    '''Ecrit dans la run foldername, les fichiers dbName en découpant le dataframe db en pages selon la taille des pages et le contenu de db'''
 
     n=len(db.index)
     nb_of_files=n//pageSize
     if not os.path.exists('Data/'+folderName):
         os.makedirs('Data/'+folderName)
-
-    delete_file(dbName,folderName)    
+    #supprime les versions precedentes de dbName
+    delete_file(dbName,folderName) 
+    #parcours des pages   
     for i in range(nb_of_files):
         db_temp=db.iloc[i*pageSize:(i+1)*pageSize]
         db_temp.to_csv('Data/'+folderName+"/"+dbName+"_"+str(i+1)+".csv",sep=',',index=False)
+    #derniere page non pleine
     if (n%pageSize!=0):
         db_temp=db.iloc[nb_of_files*pageSize:]
         db_temp.to_csv('Data/'+folderName+"/"+dbName+"_"+str(nb_of_files+1)+".csv",sep=',',index=False)
