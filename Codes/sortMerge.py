@@ -54,7 +54,7 @@ def sort_file(folderName,memory,pageSize,dbName):
             #regroupement de memoire-1 monotonies
             for j in range(memory-1):
                 #si toutes les pages de R ont étées lues
-                if nbPage!=(j+i*(memory-1))*nbPageMonotonie:
+                if nbPage>(j+i*(memory-1))*nbPageMonotonie:
                     #dernier bloc de monotonies
                     if (j+i*(memory-1)==nbMonotonie-1) and ((nbPage%(memory*((memory-1)**(passe))))!=0):
                         db=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_"+str(j+i*(memory-1)),1,nbPage%nbPageMonotonie)

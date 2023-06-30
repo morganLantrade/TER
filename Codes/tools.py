@@ -2,17 +2,32 @@ import random
 import pandas as pd
 import math
 import os
+import csv
     
 def read_X_pages(name,i,x):
+
+    L=[]
+    for i in range(i,x):
+        with open("Data/"+name+"_"+str(i)+".csv", newline='') as csvfile:
+
+            spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+            a=next(spamreader)
+            for row in spamreader:
+                L.append(row)
+                
+    return pd.DataFrame(L,columns=a)
+
+def read_X_pages_legacy(name,i,x):
     '''Retourne un dataframe correspondant au fichier name de la page i jusqu'a la page i+x'''
     db=pd.read_csv('Data/'+name+"_"+str(i)+".csv")
     k=1
+    L=[db]
     while k!=x:
         path='Data/'+name+"_"+str(i+k)+".csv"
         assert os.path.exists(path), f'Erreur : Le fichier {path} n existe pas'
-        db_tmp=pd.read_csv(path)
-        db=pd.concat([db, db_tmp], axis=0,ignore_index=True)
+        L.append(pd.read_csv(path))
         k+=1
+    db=pd.concat(L, axis=0,ignore_index=True)
     
     return db
 
