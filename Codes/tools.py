@@ -7,7 +7,7 @@ import csv
 def read_X_pages(name,i,x):
 
     L=[]
-    for i in range(i,x):
+    for i in range(i,i+x):
         with open("Data/"+name+"_"+str(i)+".csv", newline='') as csvfile:
 
             spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -139,3 +139,103 @@ def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not",size_key_in
             i+=1
         Idx[i]=1 #dernier niveau
     return nb_pages,Idx
+
+
+
+def test_cartesian_product(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page):
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    T,th_read,th_written,exp_read,exp_written=cartesian_product(R,S,selectivity,memory,size_of_tuple,size_of_page)
+    print("-"*10)
+    print("Cartesian")
+    print("-"*10)
+    print("R")
+    print(R)
+    print("*"*5)
+    print("S)")
+    print(S)
+    print("*"*5)
+    print("T")
+    print(T)
+    print("----") 
+    print("Entrée/Sortie theorique : \n")
+    print('Lecture :',th_read,'/ Ecriture :',th_written)
+    print("----")
+    print("Entrée/Sortie experimentale: \n")
+    print('Lecture :',exp_read,'/ Ecriture :',exp_written)
+    print("--")
+
+def test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index):
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read,written=cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
+    print("-"*10)
+    print("Cartesian")
+    print("-"*10)
+        
+    print("----") 
+    print("Theorique Build")
+    print('Lecture :',read_build_th,'/ Ecriture :',written_build_th)
+    print("----")
+    print("Theorique Probe")
+    print('Lecture :',read_probe_th,'/ Ecriture :',write_probe_th)
+    print("----")
+    print("Experimental Build: \n")
+    print('Lecture :',read_build_exp,'/ Ecriture :',written_build_exp)
+    print("----")
+    print("Experimental Probe: \n")
+    print('Lecture :',read,'/ Ecriture :',written)
+    print("---")
+    
+def test_sort_merge_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page):
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    
+    ##############################
+    #sort-merge
+    ##############################
+    print("-"*10)
+    print("Sort-merge")
+    print("-"*10)
+    
+    T,read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read_probe_exp,written_probe_exp=sort_merge_join(R,S,selectivity,memory,size_of_tuple,size_of_page)
+    print("R")
+    print(R)
+    print("*"*5)
+    print("S)")
+    print(S)
+    print("*"*5)
+    print("T")
+    print(T)
+    print("----") 
+    print("Theorique Build")
+    print('Lecture :',read_build_th,'/ Ecriture :',written_build_th)
+    print("----")
+    print("Theorique Probe")
+    print('Lecture :',read_probe_th,'/ Ecriture :',write_probe_th)
+    print("----")
+    print("Experimental Build: \n")
+    print('Lecture :',read_build_exp,'/ Ecriture :',written_build_exp)
+    print("----")
+    print("Experimental Probe: \n")
+    print('Lecture :',read_probe_exp,'/ Ecriture :',written_probe_exp)
+    print("---")
+
+def test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page):
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    print("-"*10)
+    print("Hybrid Hash Join")
+    print("-"*10)
+    T,read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read_probe_exp,written_probe_exp=hybrid_hash_join(R,S,selectivity,memory,size_of_tuple,size_of_page)
+    print(T)
+    print("----") 
+    print("Theorique Build")
+    print('Lecture :',read_build_th,'/ Ecriture :',written_build_th)
+    print("----")
+    print("Theorique Probe")
+    print('Lecture :',read_probe_th,'/ Ecriture :',write_probe_th)
+    print("----")
+    print("Experimental Build: \n")
+    print('Lecture :',read_build_exp,'/ Ecriture :',written_build_exp)
+    print("----")
+    print("Experimental Probe: \n")
+    print('Lecture :',read_probe_exp,'/ Ecriture :',written_probe_exp)
+    print("---")
+
