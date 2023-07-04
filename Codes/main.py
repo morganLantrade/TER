@@ -23,6 +23,7 @@ if __name__ == '__main__':
     #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     #db_to_file(R,pageSize,folderName,"R")
     #db_to_file(S,pageSize,folderName,"S")
+    seconds=time.time()
 
 
     '''--------Test--------'''
@@ -35,12 +36,12 @@ if __name__ == '__main__':
     #Pratique
 
     #cartesian_product_file(folderName,memory,pageSize)
-    #sort_merge_file(folderName,memory,pageSize)
+    sort_merge_file(folderName,memory,pageSize)
 
 
 
-    print("Done")
-    time.sleep(5)
+    print("Done in : "+ str(round(time.time()-seconds,2))+"s")
+    #time.sleep(5)
 
 
 

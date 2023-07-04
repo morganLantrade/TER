@@ -1,7 +1,3 @@
-import random
-import pandas as pd
-import math
-import os
 from tools import *
 
 def hash_join(R,S,selectivity,memory,size_of_tuple,size_of_page):

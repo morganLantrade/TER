@@ -1,7 +1,3 @@
-import random
-import pandas as pd
-import math
-import os
 from tools import *
 
 def cartesian_product_file(folderName,memory,pageSize):
