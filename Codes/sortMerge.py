@@ -1,6 +1,7 @@
 from tools import *
 
 
+@profile
 def sort_file(folderName,memory,pageSize,dbName):
     '''Effectue un tri externe du fichier dbName de la run folderName selon la memoire et la taille des pages'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
@@ -68,6 +69,7 @@ def sort_file(folderName,memory,pageSize,dbName):
         passe+=1
     return passe
 
+@profile
 def sort_merge_file(folderName,memory,pageSize):
     '''Effectue un join de S et R contenus dans la run foldername selon la memoire et la taille de page'''
     

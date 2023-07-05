@@ -7,14 +7,14 @@ import time
 if __name__ == '__main__':
     
     Rsize=300
-    Ssize=100000
+    Ssize=10000
     selectivity=1
     memory=3
     pageSize=32
     size_of_page=1024
     size_of_tuple=32
     size_key_index=8
-    folderName="R1000S10000Sel1"
+    folderName="Run1"
 
 
     #Generation de données
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     #db_to_file(R,pageSize,folderName,"R")
     #db_to_file(S,pageSize,folderName,"S")
-    seconds=time.time()
+    #seconds=time.time()
 
 
     '''--------Test--------'''
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 
 
-    print("Done in : "+ str(round(time.time()-seconds,2))+"s")
+    #print("Done in : "+ str(round(time.time()-seconds,2))+"s")
     #time.sleep(5)
 
 

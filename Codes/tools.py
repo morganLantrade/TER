@@ -3,6 +3,7 @@ import pandas as pd
 import math
 import os
 import csv
+from memory_profiler import profile
     
 def read_X_pages(name,i,x):
 
