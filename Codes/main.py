@@ -10,7 +10,7 @@ if __name__ == '__main__':
     Rsize=100
     Ssize=1000
     selectivity=0.5
-    memory=6
+    memory=3
     pageSize=32
     folderName="Run1"
 
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     #cartesian_product_file(folderName,memory,pageSize)
 
-    sort_merge_file(folderName,memory,pageSize)
+    #sort_merge_file(folderName,memory,pageSize)
     #hash_join_file(folderName,memory,pageSize)
 
     #sort_merge_file(folderName,memory,pageSize)
