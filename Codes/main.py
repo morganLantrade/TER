@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     #cartesian_product_file(folderName,memory,pageSize)
     #sort_merge_file(folderName,memory,pageSize)
-    hash_join_file(folderName,memory,pageSize)
+    simple_hash_join_file(folderName,memory,pageSize)
     #90,1,205
 
     #print("Done in : "+ str(round(time.time()-seconds,2))+"s")
