@@ -3,39 +3,67 @@ from tools import *
 
 def hash_join_file(folderName,memory,pageSize):
 
+    assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
+
     if not os.path.exists('Data/'+folderName+"_hash"):
         os.makedirs('Data/'+folderName+"_hash")
     else:
         #vide le contenu
-        delete_file("T",folderName+"_hash",)
-
+        delete_file("T",folderName+"_hash")
+    
+    if not os.path.exists('Data/'+folderName+"_hash_temp"):
+        os.makedirs('Data/'+folderName+"_hash_temp")
+    else:
+        #vide le contenu
+        delete_file("S",folderName+"_hash_temp")
     
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
-    nbPartition=math.ceil(nbPageR/(memory-2))
-    partition=0
-    dic=dict()
-    R_temp=[]
-    iR=1
-    for i in range(nbPageR):
-        db=read_X_pages(folderName+"/R",i+1,1)
-        for j in range(len(db.index)):
-            key=int(db["Y"].get(j))%nbPartition
-            if key==partition:
-                if key in dic:
-                    dic[key].append(db["Y"].get(j))
+    nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
+    iPageR=1
+    tempString=""
+    T=[]
+    iT=1
+    while iPageR<=nbPageR:
+        H=dict()
+        tempdb=[]
+        iS=1
+        for i in range((memory-2)):
+            if iPageR<=nbPageR:
+                db=read_X_pages(folderName+"/R",iPageR,1)
+                for j in range(len(db.index)):
+                    key=hash(int(db["Y"].get(j)))
+                    assert key not in H, "Colision"
+                    H[key]=db["X"].get(j)
+                iPageR+=1
+        for i in range(nbPageS):
+            db=read_X_pages(folderName+tempString+"/S",i+1,1)
+            for j in range(len(db.index)):
+                key=hash(int(db["Y"].get(j)))
+                if key in H:
+                    T.append((H[key],db["Y"].get(j),db["Z"].get(j)))
+                    if len(T)==pageSize:
+                        print(T)
+                        T=pd.DataFrame(T,columns=['X','Y','Z'])
+                        T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
+                        iT+=1
+                        T=[]
                 else:
-                    dic[key]=[db["Y"].get(j)]
-            else:
-                R_temp.append((db["X"].get(j),db["Y"].get(j)))
-                if len(R_temp)==pageSize:
-                    R_temp=pd.DataFrame(R_temp,columns=['X','Y'])
-                    R_temp.to_csv('Data/'+folderName+"_hash/R_"+str(iR)+".csv",sep=',',index=False)
-                    iR+=1
-                    R_temp=[]
-    if R_temp:
-        R_temp=pd.DataFrame(R_temp,columns=['X','Y'])
-        R_temp.to_csv('Data/'+folderName+"_hash/R_"+str(iR)+".csv",sep=',',index=False)
-    print(dic)
+                    tempdb.append((db["Y"].get(j),db["Z"].get(j)))
+                    if len(tempdb)==pageSize:
+                        tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
+                        delete_file("S_"+str(iS)+".csv",folderName+"_hash_temp")
+                        tempdb.to_csv('Data/'+folderName+"_hash_temp/S_"+str(iS)+".csv",sep=',',index=False)
+                        iS+=1
+                        tempdb=[]
+        if tempdb:
+            tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
+            tempdb.to_csv('Data/'+folderName+"_hash_temp/S_"+str(iS)+".csv",sep=',',index=False)
+            iS+=1
+        tempString="_hash_temp"
+        nbPageS=iS-1
+    if T:
+        T=pd.DataFrame(T,columns=['X','Y','Z'])
+        T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
 
 
 

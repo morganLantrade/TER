@@ -7,24 +7,24 @@ import time
 
 if __name__ == '__main__':
     
-    Rsize=3000
-    Ssize=10000
+    Rsize=100
+    Ssize=1000
     selectivity=1
     memory=3
     pageSize=32
-    folderName="R300S30000Sel1"
+    folderName="R100S1000Sel1"
 
 
     #Generation de données
 
     #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    #db_to_file(R,pageSize,folderName,"R")
+    #db_to_file(S,pageSize,folderName,"S")
     
     #lvl=index_to_file(folderName,pageSize,"S")
     #root=read_X_pages(folderName+"_idx/I",0,1)
     #print(root)
     #print(search_index(folderName,lvl,9000,pageSize))
-    #db_to_file(R,pageSize,folderName,"R")
-    #db_to_file(S,pageSize,folderName,"S")
     #seconds=time.time()
 
 
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     #cartesian_product_file(folderName,memory,pageSize)
     #sort_merge_file(folderName,memory,pageSize)
     hash_join_file(folderName,memory,pageSize)
-
+    #90,1,205
 
     #print("Done in : "+ str(round(time.time()-seconds,2))+"s")
     #time.sleep(5)
