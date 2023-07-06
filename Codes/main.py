@@ -10,7 +10,7 @@ if __name__ == '__main__':
     Rsize=100
     Ssize=1000
     selectivity=1
-    memory=3
+    memory=6
     pageSize=32
     folderName="R100S1000Sel1"
 
