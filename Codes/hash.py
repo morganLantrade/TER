@@ -16,14 +16,18 @@ def hash_join_file(folderName,memory,pageSize):
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
     T=[]
     iT=1
+    
+    nbPartitions= math.ceil(nbPageR/(memory-2))
+    partitionSize= nbPageR//nbPartitions
 
-    if nbPageR<=memory-2:
-        print("a")
+    #R peut être hachee dans la memoire
+    if nbPartitions==1:
         H=dict()
-        db=read_X_pages(folderName+"/R",1,nbPageR)
-        for i in range(len(db.index)):
-            key=hash(int(db["Y"].get(i)))
-            H[key]=db["X"].get(i)
+        for pageR in range(1,nbPageR+1):
+            db=read_X_pages(folderName+"/R",pageR,1) 
+            for i in range(len(db.index)):
+                key=hash(int(db["Y"].get(i)))
+                H[key]=db["X"].get(i)
         for i in range(nbPageS):
             db=read_X_pages(folderName+"/S",i+1,1)
             for j in range(len(db.index)):
@@ -31,7 +35,6 @@ def hash_join_file(folderName,memory,pageSize):
                 if key in H:
                     T.append((H[key],db["Y"].get(j),db["Z"].get(j)))
                     if len(T)==pageSize:
-                        print(T)
                         T=pd.DataFrame(T,columns=['X','Y','Z'])
                         T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
                         iT+=1
@@ -39,42 +42,62 @@ def hash_join_file(folderName,memory,pageSize):
         if T:
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
-
+    #on divise R entre n table de taille M-2 de hachage 
     else:
 
         if not os.path.exists('Data/'+folderName+"_hash_temp"):
             os.makedirs('Data/'+folderName+"_hash_temp")
-        else:
-            #vide le contenu
-            delete_file("S",folderName+"_hash_temp")
-
+        
         iPageR=1
-        tempString=""
-        while iPageR<=nbPageR:
+        iPartition=0
+        while iPartition<nbPartitions:
             H=dict()
             tempdb=[]
             iS=1
-            for i in range((memory-2)):
-                if iPageR<=nbPageR:
-                    db=read_X_pages(folderName+"/R",iPageR,1)
-                    for j in range(len(db.index)):
-                        key=hash(int(db["Y"].get(j)))
-                        assert key not in H, "Colision"
-                        H[key]=db["X"].get(j)
-                    iPageR+=1
-            for i in range(nbPageS):
-                db=read_X_pages(folderName+tempString+"/S",i+1,1)
-                for j in range(len(db.index)):
-                    key=hash(int(db["Y"].get(j)))
-                    if key in H:
-                        T.append((H[key],db["Y"].get(j),db["Z"].get(j)))
-                        if len(T)==pageSize:
-                            print(T)
-                            T=pd.DataFrame(T,columns=['X','Y','Z'])
-                            T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
-                            iT+=1
-                            T=[]
+            iR=1
+            #Parcours de R page par page
+            for pageR in range(1,nbPageR+1):
+                #SI partition 0 on lit R sinon R_temp
+                db=read_X_pages(folderName+("_hash_temp" if iPartition==0 else "")+"/R",pageR,1) 
+                for i in range(len(db.index)):
+                    #Si la cle appartient a la partition iPartition
+                    key_p=int(db["Y"].get(i))
+                    if key_p%nbPartitions==iPartition:
+                        key=hash(int(db["Y"].get(i)))
+                        H[key]=db["X"].get(i)
                     else:
+                        tempdb.append((db["X"].get(i),db["Y"].get(i)))
+                        #Temp_R plein
+                        if len(tempdb)==pageSize:
+                            tempdb=pd.DataFrame(tempdb,columns=['X','Y'])
+                            tempdb.to_csv('Data/'+folderName+"_hash_temp/R_"+str(iR)+".csv",sep=',',index=False)
+                            iR+=1
+                            tempdb=[]
+
+            if tempdb:
+                tempdb=pd.DataFrame(tempdb,columns=['X','Y'])
+                tempdb.to_csv('Data/'+folderName+"_hash_temp/R_"+str(iR)+".csv",sep=',',index=False)
+
+
+            #Parcours de S page par page    
+            for pageS in range(1,nbPageS+1):
+                #SI partition 0 on lit R sinon R_temp
+                db=read_X_pages(folderName+("_hash_temp" if iPartition==0 else "")+"/S",pageR,1) 
+                for j in range(len(db.index)):
+                    key_p=int(db["Y"].get(j))
+                    #Si la cle appartient a la partition iPartition
+                    if key_p%nbPartitions==iPartition:
+                        key=hash(int(db["Y"].get(j)))
+                        #Si la cle appartient a la in memory table H
+                        if key in H:
+                            T.append((H[key],db["Y"].get(j),db["Z"].get(j)))
+                            if len(T)==pageSize:
+                                T=pd.DataFrame(T,columns=['X','Y','Z'])
+                                T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
+                                iT+=1
+                                T=[]
+                            
+                    else:                        
                         tempdb.append((db["Y"].get(j),db["Z"].get(j)))
                         if len(tempdb)==pageSize:
                             tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
@@ -85,9 +108,13 @@ def hash_join_file(folderName,memory,pageSize):
             if tempdb:
                 tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
                 tempdb.to_csv('Data/'+folderName+"_hash_temp/S_"+str(iS)+".csv",sep=',',index=False)
-                iS+=1
-            tempString="_hash_temp"
+                
+                
             nbPageS=iS-1
+            nbPageR=len([f for f in os.listdir("Data/"+folderName+"hash_temps") if "R" in f])
+            nbPageS=len([f for f in os.listdir("Data/"+folderName+"hash_temps") if "S" in f])
+            iPartition+=1
+
         if T:
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
