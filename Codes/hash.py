@@ -58,12 +58,12 @@ def simple_hash_join_file(folderName,memory,pageSize):
             tempdb=[]
             iS=1
             iR=1
-                    
+            path1="_hash_temp" if iPartition!=0 else ""
+            path2="" if iPartition==0 else str(1-flag)        
             #Parcours de R page par page
             for pageR in range(1,nbPageR+1):
                 #SI partition 0 on lit R sinon R_temp
-                path1="_hash_temp" if iPartition!=0 else ""
-                path2="" if iPartition==0 else str(1-flag)
+                
                 
                 db=read_X_pages(folderName+path1+"/R"+path2,pageR,1) 
                 for i in range(len(db.index)):
