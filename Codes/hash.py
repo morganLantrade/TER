@@ -1,7 +1,7 @@
 from tools import *
 
 
-def hash_join_file(folderName,memory,pageSize):
+def simple_hash_join_file(folderName,memory,pageSize):
 
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
