@@ -18,7 +18,6 @@ def simple_hash_join_file(folderName,memory,pageSize):
     iT=1
 
     if nbPageR<=memory-2:
-        print("a")
         H=dict()
         db=read_X_pages(folderName+"/R",1,nbPageR)
         for i in range(len(db.index)):

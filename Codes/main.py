@@ -5,12 +5,14 @@ from hash import *
 from index import *
 import time
 
+#Oral Mercredi 30 aout 13h30
+
 if __name__ == '__main__':
     
     Rsize=100
     Ssize=1000
     selectivity=1
-    memory=6
+    memory=3
     pageSize=32
     folderName="R100S1000Sel1"
 
@@ -38,8 +40,8 @@ if __name__ == '__main__':
     #Pratique
 
     #cartesian_product_file(folderName,memory,pageSize)
-    #sort_merge_file(folderName,memory,pageSize)
-    simple_hash_join_file(folderName,memory,pageSize)
+    sort_merge_file(folderName,memory,pageSize)
+    #simple_hash_join_file(folderName,memory,pageSize)
     #90,1,205
 
     #print("Done in : "+ str(round(time.time()-seconds,2))+"s")

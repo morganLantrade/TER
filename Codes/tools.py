@@ -13,8 +13,8 @@ def read_X_pages(name,i,x):
 
             spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
             a=next(spamreader)
-            for row in spamreader:
-                L.append(row)
+            for x,y in spamreader:
+                L.append((int(x),int(y)))
                 
     return pd.DataFrame(L,columns=a)
 
