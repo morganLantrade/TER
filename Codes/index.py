@@ -100,14 +100,14 @@ class BTree:
       for i in x.child:
         self.levels(i,dic, l)
     return dic     
- 
+
 def index_of(dataframe,pageSize):
     '''Renvoie le dictionnaire levels selon un dataframe et la taille d'une page(en tuple)'''
     B=BTree(pageSize)
     L= dataframe.values.tolist()
     for y,x in L:
         B.insert((int(y),int(x)))
-    B.print_tree(B.root)
+    
     return B.levels(B.root,dict())
 
 def index_page(dic):
@@ -134,7 +134,7 @@ def index_page(dic):
             page.append((p[1],p[0]))
         pages.append(page)
     return pages,cpt_page_level
-
+@profile
 def index_to_file(folderName,pageSize,dbName):
     '''Ecrit dans la run foldername_idx, l'index et retourne le nombre de niveaux'''
     if not os.path.exists('Data/'+folderName+"_idx"):
@@ -152,7 +152,7 @@ def index_to_file(folderName,pageSize,dbName):
 
     for i,p in enumerate(pages):
         T=p
-        T=pd.DataFrame(T,columns=['Y','Z'])
+        T=pd.DataFrame(T,columns=['X','Y'])
         T.to_csv('Data/'+folderName+"_idx/"+"I_"+str(i)+".csv",sep=',',index=False)
     return lvl
 
@@ -168,7 +168,7 @@ def nbLevel(nbPage,pageSize):
     Idx[i]=1 #dernier niveau
     return Idx
         
-
+@profile
 def index_to_file2(folderName,dbName,memory,pageSize):
 
     ''''Ecrit dans la run foldername_idx, l'index et retourne le nombre de niveaux'''
@@ -188,7 +188,7 @@ def index_to_file2(folderName,dbName,memory,pageSize):
     
     buffers= [ [] for _ in range(len(nb))] #nombre de buffers determine a l'avance
     iPage=1
-    print(nb)
+    
     for pageR in range(1,nbPageR+1):
         R=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_0",pageR,1)
         for k in range(len(R.index)):

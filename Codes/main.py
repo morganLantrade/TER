@@ -9,8 +9,8 @@ import time
 
 if __name__ == '__main__':
     
-    Rsize=15000
-    Ssize=20000
+    Rsize=150000
+    Ssize=2
     selectivity=1
     memory=100
     pageSize=32
@@ -23,12 +23,12 @@ if __name__ == '__main__':
     #db_to_file(R,pageSize,folderName,"R")
     #db_to_file(S,pageSize,folderName,"S")
     #index_to_file2("Run1","R",memory,pageSize)
+    #index_to_file("Run1",pageSize,"R")
     #lvl=index_to_file(folderName,pageSize,"S")
-    root=read_X_pages(folderName+"_idx2/I",486,1)
-    print(root)
-    
-    for i in range(0,28000,2800):
-        print(search_index(folderName,3,i,pageSize,root))
+    #root=read_X_pages(folderName+"_idx2/I",486,1)
+        
+    #for i in range(0,28000,2800):
+        #print(search_index(folderName,3,i,pageSize,root))
     #seconds=time.time()
     #
 
