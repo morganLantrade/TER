@@ -4,6 +4,7 @@
 ########################################################################
 import pandas as pd
 from tools import *
+from sortMerge import *
 
 
 class BTreeNode:
@@ -147,7 +148,6 @@ def index_to_file(folderName,pageSize,dbName):
     #chargement du dataframe
     db=read_X_pages(folderName+"/"+dbName,1,nbPage)
     dic = index_of(db,pageSize)
-    print(dic)
     pages,lvl = index_page(dic)
 
     for i,p in enumerate(pages):
@@ -156,16 +156,105 @@ def index_to_file(folderName,pageSize,dbName):
         T.to_csv('Data/'+folderName+"_idx/"+"I_"+str(i)+".csv",sep=',',index=False)
     return lvl
 
+def nbLevel(nbPage,pageSize):
+    '''Retourne le nombre de niveau et de page par niveau selon le nombre de page et de sa taille'''
+    x=nbPage
+    i=0
+    Idx=dict()
+    while x>1:
+        Idx[i]=x
+        x= math.ceil(x/pageSize-int(i>0))
+        i+=1
+    Idx[i]=1 #dernier niveau
+    return Idx
+        
+
+def index_to_file2(folderName,dbName,memory,pageSize):
+
+    ''''Ecrit dans la run foldername_idx, l'index et retourne le nombre de niveaux'''
+    if not os.path.exists('Data/'+folderName+"_idx2"):
+        os.makedirs('Data/'+folderName+"_idx2")
+    else:
+        #vide le contenu
+        delete_file("I",folderName+"_idx2")
+    passe=sort_file(folderName,memory,pageSize,dbName)    
+    
+
+    #metadonnees
+    nbPageR=len([f for f in os.listdir("Data/"+folderName+"_sorted") if (dbName+str(passe)) in f])
+    nb= nbLevel(nbPageR,pageSize)
+    assert memory>=len(nb)+1, f'Erreur : La memoire doit contenir au moins {len(nb)+1} pages : 1 pour charger la page input et {len(nb)} buffer pour construire les niveaux'
+    iR=0
+    
+    buffers= [ [] for _ in range(len(nb))] #nombre de buffers determine a l'avance
+    iPage=1
+    print(nb)
+    for pageR in range(1,nbPageR+1):
+        R=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_0",pageR,1)
+        for k in range(len(R.index)):
+            x,y=int(R["X"].get(k)),int(R["Y"].get(k))
+            buffers[0].append((x,y))
+            iR+=1
+            #Plus aucune valeur ne peut rentrer dans la page du dernier niveau
+            if len(buffers[0])==pageSize:
+                    y=buffers[0][pageSize-1][1] #rajout du dernier element au niveau du dessus
+                    buffers[1].append((iPage,y)) 
+                    T=pd.DataFrame(buffers[0],columns=['X','Y'])
+                    T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
+                    iPage+=1
+                    buffers[0]=[]
+                    del T
+            #Les niveau d'au dessus
+            for level in range(1,len(nb)-1):
+                if len(buffers[level])==pageSize-1:
+                    buffers[level].append((iPage+1,-1))
+                    buffers[level+1].append((iPage,y+1))
+                    T=pd.DataFrame(buffers[level],columns=['X','Y'])
+                    T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
+                    iPage+=1
+                    buffers[level]=[]
+                    del T
+
+    #Les niveaux ne sont pas vides
+    if buffers[0]:
+        y=buffers[0][-1][1] #rajout du dernier element au niveau du dessus
+        buffers[1].append((iPage,y)) 
+        T=pd.DataFrame(buffers[0],columns=['X','Y'])
+        T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
+        iPage+=1
+        buffers[0]=[]
+        del T
+    #On vide les buffers des niveaux au dessus
+    for level in range(1,len(nb)-1):
+        buffers[level].append((iPage-level,-1))
+        buffers[level+1].append((iPage,y))
+        T=pd.DataFrame(buffers[level],columns=['X','Y'])
+        T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
+        iPage+=1
+
+        buffers[level]=[]
+        del T
+    
+    buffers[len(nb)-1].append((iPage-1,-1))
+    T=pd.DataFrame(buffers[len(nb)-1],columns=['X','Y'])
+    T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
+    iPage+=1
+
+
+
+   
+   
+
 def search_in_page(folderName,num_page,key,i,level,pageSize):
     '''Renvoie la page du prochain niveau ou Z si le level est le dernier'''
     cpt=0
-    with open('Data/'+folderName+"_idx/I_"+str(num_page)+".csv", 'r') as file:
+    with open('Data/'+folderName+"_idx2/I_"+str(num_page)+".csv", 'r') as file:
         spamreader = csv.reader(file, delimiter=',', quotechar='|')
         a=next(spamreader)
         #Tant que la key n'est pas supperieure et qu'il existe des lignes
         for y in spamreader:
             page=int(y[0])
-            if int(y[1])> key and level!=i or int(y[1])==key and level==i:
+            if (int(y[1])> key and level!=i) or (int(y[1])==key and level==i):
                 return page
 
             
@@ -178,18 +267,30 @@ def search_index(folderName,level,key,pageSize,root=None):
     l=0
     #La racine est deja chargee en memoire
     if root is not None:
-        while l<len(root.index) and int(root["Z"].get(l))<key:
+        while l<len(root.index) and int(root["Y"].get(l))<=key:
             l+=1
-        next_page=int(root["Y"].get(l-1))
+        l -= 1 if l>=len(root.index) else 0 #on a depasse
+        next_page=int(root["X"].get(l))
     else:
         next_page=search_in_page(folderName,0,key,lvl,level,pageSize)
+    print("--------------")
+    print(key)
+    print("--------------")
+    print("Search lvl 0 ")
+    print(f'----> {next_page}')
+    
     #on parcour les niveaux
-    while lvl<=level:
-        next_page=search_in_page(folderName,next_page,key,lvl,level,pageSize)
+    while lvl<level:
         lvl+=1
+        next_page=search_in_page(folderName,next_page,key,lvl,level,pageSize)
+        print(f'Search lvl {lvl-1} ')
+        print(f'----> {next_page}')
+        
+    print(f'Result : {next_page}')
+      
     return next_page
         
-   
+
     
     
 

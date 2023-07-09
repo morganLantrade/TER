@@ -9,26 +9,28 @@ import time
 
 if __name__ == '__main__':
     
-    Rsize=100
-    Ssize=1000
+    Rsize=15000
+    Ssize=20000
     selectivity=1
-    memory=3
+    memory=100
     pageSize=32
     folderName="Run1"
 
 
     #Generation de données
 
-    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    db_to_file(R,pageSize,folderName,"R")
-    db_to_file(S,pageSize,folderName,"S")
-    
+    #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    #db_to_file(R,pageSize,folderName,"R")
+    #db_to_file(S,pageSize,folderName,"S")
+    #index_to_file2("Run1","R",memory,pageSize)
     #lvl=index_to_file(folderName,pageSize,"S")
-    #root=read_X_pages(folderName+"_idx/I",0,1)
-    #print(root)
-    #print(search_index(folderName,lvl,9000,pageSize))
+    root=read_X_pages(folderName+"_idx2/I",486,1)
+    print(root)
+    
+    for i in range(0,28000,2800):
+        print(search_index(folderName,3,i,pageSize,root))
     #seconds=time.time()
-
+    #
 
     #--------Test--------
 
@@ -40,7 +42,7 @@ if __name__ == '__main__':
     #Pratique
 
     #cartesian_product_file(folderName,memory,pageSize)
-    sort_merge_file(folderName,memory,pageSize)
+    #sort_merge_file(folderName,memory,pageSize)
     #simple_hash_join_file(folderName,memory,pageSize)
 
     #90,1,205
