@@ -4,9 +4,25 @@ import math
 import os
 import csv
 from memory_profiler import profile
+import linecache
+
+
+
+def read_line(name,page,line):
+    '''Retourne le tuple correspondant selon la ligne et la page'''
+    path="Data/"+name+"_"+str(page)+".csv"
+    the_line =linecache.getline(path, line).rstrip().split(',')
+    print(path)
+    print(line)
+    print(the_line)
+    x,y=the_line
+    if x=='X':
+        x,y =linecache.getline(path, line+1).rstrip().split(',')
+    return int(x),int(y)
+
     
 def read_X_pages(name,i,x):
-
+    '''Retourne un dataframe correspondant au fichier name de la page i jusqu'a la page i+x'''
     L=[]
     for i in range(i,i+x):
         with open("Data/"+name+"_"+str(i)+".csv", newline='') as csvfile:

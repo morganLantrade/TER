@@ -193,7 +193,7 @@ def index_to_file2(folderName,dbName,memory,pageSize):
         R=read_X_pages(folderName+"_sorted/"+dbName+str(passe)+"_0",pageR,1)
         for k in range(len(R.index)):
             x,y=int(R["X"].get(k)),int(R["Y"].get(k))
-            buffers[0].append((x,y))
+            buffers[0].append((iR,y))
             iR+=1
             #Plus aucune valeur ne peut rentrer dans la page du dernier niveau
             if len(buffers[0])==pageSize:
@@ -239,7 +239,7 @@ def index_to_file2(folderName,dbName,memory,pageSize):
     T=pd.DataFrame(buffers[len(nb)-1],columns=['X','Y'])
     T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
     iPage+=1
-    return len(nb)
+    return len(nb),passe
 
 
    
@@ -327,7 +327,6 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
         next_page=search
     #update stat
     update_stat(stat,lvl,num_page)
-    
         
     #on parcour les niveaux
     while lvl<level-1:
@@ -347,6 +346,7 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
 
         #update stat
         update_stat(stat,lvl,num_page)
+        
      
         
       

@@ -45,7 +45,7 @@ def cartesian_product_file(folderName,memory,pageSize):
             for k in range(len(R.index)):
                 for l in range(len(S.index)):
                     if (R["Y"].get(k)==S["Y"].get(l)):
-                        T.append((R['X'].get(k),R['Y'].get(k),S['Z'].get(l)))
+                        T.append((R['X'].get(k),(R['Y'].get(k),S['Y'].get(l)),S['Z'].get(l)))
                         #buffer plein
                         if len(T)==pageSize:
                             pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cp/T_"+str(nbPageT+1)+".csv",sep=',',index=False)
@@ -93,9 +93,9 @@ def cartesian_product_index(folderName,selectivity,memory,pageSize):
 
         
     #Build
-    read_build_th = R_pages 
+    read_build_th = R_pages + R_pages*(1+math.ceil(math.log(math.ceil(R_pages/memory),memory-1)))
     #nombre pages index
-    written_build_th = sum(idx.values()) 
+    written_build_th = sum(idx.values()) +read_build_th-R_pages
     
     #Probe
     n=len(idx)# nombre de niveau a charger regulierement
@@ -124,7 +124,7 @@ def cartesian_product_index_file(folderName,memory,pageSize):
     assert memory>=4, "Erreur : La memoire doit contenir au moins 4 pages"
 
     #Build
-    level=index_to_file2(folderName,"R",memory,pageSize)
+    level,passe=index_to_file2(folderName,"R",memory,pageSize)
 
     path='Data/'+folderName+"_cpi"
     
@@ -154,8 +154,14 @@ def cartesian_product_index_file(folderName,memory,pageSize):
             search,ram,stat,free_space =search_index(folderName,ram,free_space,level,y,stat,nbPageI)
             
             if search is not None:
+
+                page=(search+1)//pageSize +int((search+1)%pageSize!=0)
+                line= search%pageSize +2
                 
-                T.append((search,y,z))
+                
+                x,y1=read_line(folderName+"_sorted/R"+str(passe)+"_0",page,line)
+                
+                T.append((x,(y1,y),z))
                 #buffer plein
                 if len(T)==pageSize:
                     pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cpi/T_"+str(iT)+".csv",sep=',',index=False)

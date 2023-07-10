@@ -21,8 +21,11 @@ if __name__ == '__main__':
     free_space=10
     level=3
     root=50
-    cartesian_product_index_file(folderName,memory,pageSize)
+    passe=1
+    
+    #cartesian_product_index_file(folderName,memory,pageSize)
     #cartesian_product_index(folderName,selectivity,memory,pageSize)
+    cartesian_product_file(folderName,memory,pageSize)
     #s,_,_,_=search_index(folderName,ram,free_space,level,704,stat,root)
     #print(s)
     
@@ -37,7 +40,7 @@ if __name__ == '__main__':
     #index_to_file("Run1",pageSize,"R")
     #lvl=index_to_file(folderName,pageSize,"S")
     #root=read_X_pages(folderName+"_idx2/I",486,1)
-    #cartesian_product_file(folderName,memory,pageSize)
+    #
     #
     #seconds=time.time()
     #
