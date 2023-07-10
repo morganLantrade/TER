@@ -44,6 +44,11 @@ def read_X_pages_legacy(name,i,x):
     return db
 
 
+
+def delete_folder(folderName):
+    delete_file("csv",folderName)
+    os.rmdir("Data/"+folderName)
+
 def delete_file(dbName,folderName):
     '''Supprime tous les fichiers de folrderName contenante dbNamr'''
     for f in os.listdir("Data/"+folderName):
