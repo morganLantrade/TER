@@ -239,7 +239,7 @@ def index_to_file2(folderName,dbName,memory,pageSize):
     T=pd.DataFrame(buffers[len(nb)-1],columns=['X','Y'])
     T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
     iPage+=1
-
+    return len(nb)
 
 
    
@@ -258,7 +258,7 @@ def search_in_page(folderName,num_page,key,i,level,pageSize):
                 return page
 
             
-        return page if level!=i else None
+        return page if level!=lvl-1 else None
 
 
 def search_in_memory(ram,num_page,key,lvl,level):
@@ -268,9 +268,10 @@ def search_in_memory(ram,num_page,key,lvl,level):
         for i in range(len(ram[num_page].index)):
             y,page=int(ram[num_page]["Y"].get(i)),int(ram[num_page]["X"].get(i))
             #print(y,page,i)
-            if (y> key and level!=lvl-1) or (y==key and level-1==lvl):
+
+            if (y>= key and level-1!=lvl) or (y==key and level-1==lvl):
                 return page
-        return page if level!=i else None
+        return page if level-1!=lvl else None
     else:
         return False
 
@@ -279,9 +280,7 @@ def load_in_memory(folderName,ram,free_space,num_page,stat):
     retire la page la plus visité du niveau le plus bas'''
     if free_space<=0:
         #suppression d'une page dans la memoire
-        print(stat)
         page_to_delete= stat[-1][0]
-        print("X ",page_to_delete," -> ",num_page)
         del ram[page_to_delete]
         #on remet a zero prochaine page a unload
         del stat[-1]
@@ -321,23 +320,15 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
     search=search_in_memory(ram,num_page,key,lvl,level)
     #verif que la racine est dans la ram
     if search==False:
-        print("non trouve")
         load_in_memory(folderName,ram,free_space,num_page,stat)
         free_space-=1
         next_page=search_in_memory(ram,num_page,key,lvl,level)
     else:
-        print("trouve")
         next_page=search
-    
     #update stat
     update_stat(stat,lvl,num_page)
     
-    print("--------------")
-    print(key)
-    print("--------------")
-    print("Search lvl 0 ")
-    print(f'----> {next_page}')
-    
+        
     #on parcour les niveaux
     while lvl<level-1:
         lvl+=1
@@ -345,21 +336,19 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
         
         search=search_in_memory(ram,next_page,key,lvl,level)
         if search==False:
-            print("non trouve")
+            
             load_in_memory(folderName,ram,free_space,next_page,stat)
             free_space-=1
             next_page=search_in_memory(ram,next_page,key,lvl,level)
         else:
-            print("trouve")
+            
             next_page=search
+          
 
         #update stat
         update_stat(stat,lvl,num_page)
-
-        print(f'Search lvl {lvl} ')
-        print(f'----> {next_page}')
-
-    print(f'Result : {next_page}')
+     
+        
       
     return next_page,ram,stat,free_space
 

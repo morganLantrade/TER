@@ -9,16 +9,25 @@ import time
 
 if __name__ == '__main__':
     
-    Rsize=150000
-    Ssize=2
+    Rsize=1500
+    Ssize=10000
     selectivity=1
     memory=7
     pageSize=32
-    folderName="Run1"
+    folderName="Run2"
 
+    ram=dict()
+    stat=dict()
+    free_space=10
+    level=3
+    root=50
+    cartesian_product_index_file(folderName,memory,pageSize)
+    #cartesian_product_index(folderName,selectivity,memory,pageSize)
+    #s,_,_,_=search_index(folderName,ram,free_space,level,704,stat,root)
+    #print(s)
     
 
-    #print(cartesian_product_index("Run1",selectivity,memory,pageSize))
+    
     #Generation de données
 
     #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
@@ -28,14 +37,8 @@ if __name__ == '__main__':
     #index_to_file("Run1",pageSize,"R")
     #lvl=index_to_file(folderName,pageSize,"S")
     #root=read_X_pages(folderName+"_idx2/I",486,1)
-    stat=dict()
-    ram=dict()
-    free_space=memory-3    
-    for i in range(0,28000,2800):
-        next_page,ram,stat,free_space=search_index(folderName,ram,free_space,4,i,stat,4846)
-        print(len(ram))
-        print(free_space)
-    print(stat)
+    #cartesian_product_file(folderName,memory,pageSize)
+    #
     #seconds=time.time()
     #
 

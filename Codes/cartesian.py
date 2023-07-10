@@ -116,3 +116,57 @@ def cartesian_product_index(folderName,selectivity,memory,pageSize):
     
     
     return read_build_th+read_probe_th,written_build_th+write_probe_th
+
+
+def cartesian_product_index_file(folderName,memory,pageSize):
+    '''Jointure cartesienne selon R et S contenu dans le folder
+    pour une mémoire centrale et une taille de page donnée'''
+    assert memory>=4, "Erreur : La memoire doit contenir au moins 4 pages"
+
+    #Build
+    level=index_to_file2(folderName,"R",memory,pageSize)
+
+    path='Data/'+folderName+"_cpi"
+    
+    if not os.path.exists(path):
+        os.makedirs(path)
+    else:
+        #supprime tous les fichiers du repertoire run correspondant 
+        delete_file("T",folderName+"_cpi") 
+    
+
+    #metadonnées
+    nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    nbPageI=len([f for f in os.listdir("Data/"+folderName+"_idx2") if "I" in f])
+
+
+    #initialisation
+    T=[]
+    iT=1
+    ram=dict()
+    stat=dict()
+    free_space=memory-3
+    
+    for PageS in range(1,nbPageS+1):
+        S=read_X_pages(folderName+"/S",PageS,1)
+        for i in range(len(S.index)):
+            y,z = int(S["Y"].get(i)),int(S["Z"].get(i))
+            search,ram,stat,free_space =search_index(folderName,ram,free_space,level,y,stat,nbPageI)
+            
+            if search is not None:
+                
+                T.append((search,y,z))
+                #buffer plein
+                if len(T)==pageSize:
+                    pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cpi/T_"+str(iT)+".csv",sep=',',index=False)
+                    iT+=1
+                    T=[]
+
+
+
+    if T:
+        #vide le buffer si il est non vide
+        pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cpi/T_"+str(iT)+".csv",sep=',',index=False)
+    
+    
+
