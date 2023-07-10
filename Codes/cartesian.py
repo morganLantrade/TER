@@ -114,4 +114,5 @@ def cartesian_product_index(folderName,selectivity,memory,pageSize):
     
     
     
+    
     return read_build_th+read_probe_th,written_build_th+write_probe_th
