@@ -17,6 +17,8 @@ if __name__ == '__main__':
     folderName="Run1"
 
 
+
+    print(cartesian_product_index("Run1",selectivity,memory,pageSize))
     #Generation de données
 
     #R,S=generate_db(Rsize,Ssize,selectivity,double=False)

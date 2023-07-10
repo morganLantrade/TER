@@ -134,6 +134,7 @@ def index_page(dic):
             page.append((p[1],p[0]))
         pages.append(page)
     return pages,cpt_page_level
+
 @profile
 def index_to_file(folderName,pageSize,dbName):
     '''Ecrit dans la run foldername_idx, l'index et retourne le nombre de niveaux'''
@@ -170,7 +171,6 @@ def nbLevel(nbPage,pageSize):
         
 @profile
 def index_to_file2(folderName,dbName,memory,pageSize):
-
     ''''Ecrit dans la run foldername_idx, l'index et retourne le nombre de niveaux'''
     if not os.path.exists('Data/'+folderName+"_idx2"):
         os.makedirs('Data/'+folderName+"_idx2")
@@ -289,6 +289,10 @@ def search_index(folderName,level,key,pageSize,root=None):
     print(f'Result : {next_page}')
       
     return next_page
+
+def load_index(folderName,memory,idx):
+    '''Retourne une dictionnaire nom de fichier : db correspondant aux niveaux chargés dans la RAM'''
+    pass
         
 
     

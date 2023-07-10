@@ -1,4 +1,5 @@
 from tools import *
+from index import *
 
 def cartesian_product_file(folderName,memory,pageSize):
     '''Jointure cartesienne selon R et S contenu dans le folder
@@ -74,72 +75,43 @@ def cartesian_product(folderName,selectivity,memory,pageSize):
     
     th_read= R_pages  + S_pages*math.ceil(R_pages/b)
     th_written= math.ceil(math.ceil(nbTuplesR*selectivity)/pageSize)
-    
-    '''    
-    ##Experiment
-    n=len(R)
-    m=len(S)
-    T=[]
-    written=1 # dans tous les cas on ecrira sur au moins une page output
-    read=0 
-
-    for i in range(n):
-        if i%tuples_per_page==0: #page suivante de R 
-            read+=1 
-        for j in range(m):
-            if (i%(tuples_per_page*b)==0) and (j%tuples_per_page==0):  #bloc de b pages suivant donc on compte les pages de S lues
-                read+=+1
-            if R['Y'].get(i)==S['Y'].get(j):
-                T.append((R['X'].get(i),R['Y'].get(i),S['Z'].get(j)))
-                written+= int(len(T)%tuples_per_page==0)  #page suivante de T
-                
-    return pd.DataFrame(T,columns=['X','Y','Z']),th_read,th_written,read,written'''
+  
     return th_read,th_written
 
-def cartesian_product_index(R,S,selectivity,memory,size_of_tuple,size_of_page,size_key_index):
+def cartesian_product_index(folderName,selectivity,memory,pageSize):
     '''Renvoi une simulation memoire d'un join des tables R et S en utilisant un algorithme de produit cartésien indexe sur S'''
     assert memory>=4, "Erreur : La memoire doit contenir au moins 4 pages"
     
-    ##Theoric##
-    R_pages,_= number_of_pages(R,size_of_tuple,size_of_page)
-    S_pages,idx=number_of_pages(S,size_of_tuple,size_of_page,"B-arbre",size_key_index)
-    tuples_per_page= size_of_page//size_of_tuple
-    
-    #Build
-    read_build_th = S_pages 
-    written_build_th = sum(idx.values()) #nombre pages index
+    #metadonnées
+    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
+    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
+    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
+    idx=nbLevel(R_pages,pageSize)
 
-    #Probe
-    n=len(idx) # nombre de niveau a charger regulierement
-    free_space=memory-2 
-    read=0
-    #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
-    while free_space-idx[(n-1)]>=1 and n>0:  
-        free_space-= idx[(n-1)]
-        read+=idx[(n-1)] # pages des niveaux que l'on charge qu'une seule fois
-        n-=1
-    
-    
-    
-    read_probe_th = R_pages + len(R)*(n+1) + read  #niveau a charger + lecture effective de S sur le disque
-    write_probe_th = written= math.ceil(math.ceil(len(R)*selectivity)/tuples_per_page)
-    
-
-
-    ##Experiment
     print("Pages par niveau de l'index :",idx)
 
-    # A implementer un index B-arbre ou juste simulation theorique de l'index
-    read_build_exp=read_build_th
-    written_build_exp = written_build_th
+        
+    #Build
+    read_build_th = R_pages 
+    #nombre pages index
+    written_build_th = sum(idx.values()) 
+    
+    #Probe
+    n=len(idx)# nombre de niveau a charger regulierement
+    free_space=memory-3
+    read=0
+    #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
+    while free_space-idx[(n-1)]>=0 and n>0:  
+        free_space-= idx[(n-1)]
+        read+=idx[(n-1)] #charge au moins une fois
+        n-=1
+    
 
+    #probe de s  + #les les tuples correspondant a E
+    read_probe_th = S_pages + nbTuplesS*n + selectivity*nbTuplesR  + read
+    write_probe_th =  math.ceil(math.ceil(nbTuplesR*selectivity)/pageSize)
     
-    for i in range(len(R)):
-        if i%tuples_per_page==0: #page suivante de R 
-            read+=1 
-        j=0
-        while j<= n: #on ne charge que les niveaux a charger
-            read +=1 
-            j+=1 
     
-    return read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read,written
+    
+    return read_build_th+read_probe_th,written_build_th+write_probe_th
