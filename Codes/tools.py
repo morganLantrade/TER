@@ -11,13 +11,8 @@ import linecache
 def read_line(name,page,line):
     '''Retourne le tuple correspondant selon la ligne et la page'''
     path="Data/"+name+"_"+str(page)+".csv"
-    the_line =linecache.getline(path, line).rstrip().split(',')
-    print(path)
-    print(line)
-    print(the_line)
-    x,y=the_line
-    if x=='X':
-        x,y =linecache.getline(path, line+1).rstrip().split(',')
+    x,y =linecache.getline(path, line).rstrip().split(',')
+
     return int(x),int(y)
 
     

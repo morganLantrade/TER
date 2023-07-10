@@ -23,9 +23,9 @@ if __name__ == '__main__':
     root=50
     passe=1
     
-    #cartesian_product_index_file(folderName,memory,pageSize)
+    cartesian_product_index_file(folderName,memory,pageSize)
     #cartesian_product_index(folderName,selectivity,memory,pageSize)
-    cartesian_product_file(folderName,memory,pageSize)
+    #cartesian_product_file(folderName,memory,pageSize)
     #s,_,_,_=search_index(folderName,ram,free_space,level,704,stat,root)
     #print(s)
     
