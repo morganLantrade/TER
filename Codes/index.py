@@ -261,26 +261,27 @@ def search_in_page(folderName,num_page,key,i,level,pageSize):
         return page if level!=i else None
 
 
-def search_in_memory(ram,num_page,key,i,level):
+def search_in_memory(ram,num_page,key,lvl,level):
     '''Renvoie la page du prochain niveau si le niveau precedent est dans la memoire'''
     if num_page in ram:
         #Tant que la key n'est pas supperieure et qu'il existe des lignes
         for i in range(len(ram[num_page].index)):
-            page=int(ram[num_page]["Y"].get(i))
-            if (page> key and level!=i) or (page==key and level==i):
+            y,page=int(ram[num_page]["Y"].get(i)),int(ram[num_page]["X"].get(i))
+            #print(y,page,i)
+            if (y> key and level!=lvl-1) or (y==key and level-1==lvl):
                 return page
         return page if level!=i else None
     else:
         return False
 
-def load_in_memory(folderName,ram,free_space,num_page):
+def load_in_memory(folderName,ram,free_space,num_page,stat):
     '''Charge la page num_page dans la memoire si free_space est sup a zero sinon 
     retire la page la plus visité du niveau le plus bas'''
-    if free_space>0:
-        free_space-=1
-    else:
+    if free_space<=0:
         #suppression d'une page dans la memoire
-        page_to_delete= stat[-1]
+        print(stat)
+        page_to_delete= stat[-1][0]
+        print("X ",page_to_delete," -> ",num_page)
         del ram[page_to_delete]
         #on remet a zero prochaine page a unload
         del stat[-1]
@@ -288,7 +289,7 @@ def load_in_memory(folderName,ram,free_space,num_page):
         
 
 def update_stat(stat,level,num_page):
-    '''Met a jour les stats de parcours de pages '''
+    '''Met a jour les stats de parcours de pages  et la prochaine page a unload'''
     if level in stat:
         if num_page in stat[level]:
             stat[level][num_page]+=1
@@ -313,10 +314,6 @@ def update_stat(stat,level,num_page):
 
 
 
-
-
-   
-
 def search_index(folderName,ram,free_space,level,key,stat,num_page):
     '''Retourne le tuple si il existe dans l'index de la run folderName None sinon'''
     lvl=0
@@ -324,10 +321,14 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
     search=search_in_memory(ram,num_page,key,lvl,level)
     #verif que la racine est dans la ram
     if search==False:
-        load_in_memory(ram,free_space,num_page)
+        print("non trouve")
+        load_in_memory(folderName,ram,free_space,num_page,stat)
+        free_space-=1
         next_page=search_in_memory(ram,num_page,key,lvl,level)
     else:
+        print("trouve")
         next_page=search
+    
     #update stat
     update_stat(stat,lvl,num_page)
     
@@ -338,25 +339,29 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
     print(f'----> {next_page}')
     
     #on parcour les niveaux
-    while lvl<level:
+    while lvl<level-1:
         lvl+=1
         num_page=next_page #page update dans stat apres recherche
         
-        earch=search_in_memory(ram,next_page,key,lvl,level)
+        search=search_in_memory(ram,next_page,key,lvl,level)
         if search==False:
-            load_in_memory(folderName,ram,free_space,next_page)
+            print("non trouve")
+            load_in_memory(folderName,ram,free_space,next_page,stat)
+            free_space-=1
             next_page=search_in_memory(ram,next_page,key,lvl,level)
         else:
+            print("trouve")
             next_page=search
+
         #update stat
         update_stat(stat,lvl,num_page)
 
-        print(f'Search lvl {lvl-1} ')
+        print(f'Search lvl {lvl} ')
         print(f'----> {next_page}')
 
     print(f'Result : {next_page}')
       
-    return next_page
+    return next_page,ram,stat,free_space
 
     
     
