@@ -1,0 +1,18 @@
+Intro(prob/principe algo)
+choix du sujet (boite noire)
+               sgbd non mature -> impl. sois même
+
+1.Gestion de projet:
+-organisation (diagrammes)
+-méthode / outils
+
+2 Notre méthodologie pr l'implementation (outils utilisés)
+
+3.Principe et Comparaisons des algo
+-Théoriques
+-Expérimentaux
+
+4.Résultats:
+conditions/parametres
+
+Conclusion
