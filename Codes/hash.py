@@ -1,10 +1,119 @@
 from tools import *
 import time
 
-def grace_hash_join_file(folderName,memory,pageSize):
+def hybrid_hash_join_file(folderName,memory,pageSize):
 
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
+
+    
+
+    nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
+    nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
+
+    B=1+math.ceil((nbPageR-memory+2)/(memory-3))
+    if nbPageR<=memory-2:
+        print("simple")
+        simple_hash_join_file(folderName,memory,pageSize)
+    elif B<=memory-2:
+        print("hybrid")
+        
+        if not os.path.exists('Data/'+folderName+"_hybrid_hash"):
+            os.makedirs('Data/'+folderName+"_hybrid_hash")
+        else:
+            #vide le contenu
+            delete_file("T",folderName+"_hybrid_hash")
+
+
+        if not os.path.exists('Data/'+folderName+"_hybrid_hash_partition"):
+            os.makedirs('Data/'+folderName+"_hybrid_hash_partition")
+        else:
+            #vide le contenu
+            for f in os.listdir("Data/"+folderName+"_hybrid_hash_partition"):
+                delete_folder(folderName+"_hybrid_hash_partition/"+f)
+        
+        
+        for i in range(B-1):
+            os.makedirs('Data/'+folderName+"_hybrid_hash_partition/"+str(i+1))
+        
+        PSize1=memory-2-(B-1)
+        ratioP1=int((PSize1/nbPageR)*100)
+        ratioP=(100-ratioP1)//(B-1)
+        buffers=[[] for _ in range(B-1)]
+        ibuffers=[0 for _ in range(B-1)]
+        H=dict()
+        T=[]
+        iT=0
+        for pageR in range(nbPageR):
+            db=read_X_pages(folderName+"/R",pageR+1,1) 
+            for i in range(len(db.index)):
+                key=int(db["Y"].get(i))
+                if key%100<ratioP1:
+                    H[key]=db["X"].get(i)
+                else:
+                    iP=((key%100)-ratioP1)//ratioP
+                    buffers[iP].append((db["X"].get(i),db["Y"].get(i)))
+                    if len(buffers[iP])==pageSize:
+                        Temp=pd.DataFrame(buffers[iP],columns=['X','Y'])
+                        Temp.to_csv('Data/'+folderName+"_hybrid_hash_partition/"+str(iP+1)+"/R_"+str(ibuffers[iP])+".csv",sep=',',index=False)
+                        ibuffers[iP]+=1
+                        buffers[iP]=[]
+        for iP,P in enumerate(buffers):
+
+            if P:
+                Temp=pd.DataFrame(P,columns=['X','Y'])
+                Temp.to_csv('Data/'+folderName+"_hybrid_hash_partition/"+str(iP+1)+"/R_"+str(ibuffers[iP])+".csv",sep=',',index=False)
+            ibuffers[iP]=0
+            buffers[iP]=[]
+
+        for pageS in range(nbPageS):
+            db=read_X_pages(folderName+"/S",pageS+1,1) 
+            for i in range(len(db.index)):
+                key=int(db["Y"].get(i))
+                if key%100<ratioP1:
+                    if key in H:
+                        T.append((H[key],db["Y"].get(i),db["Z"].get(i)))
+                        if len(T)==pageSize:
+                            T=pd.DataFrame(T,columns=['X','Y','Z'])
+                            T.to_csv('Data/'+folderName+"_hybrid_hash/T_"+str(iT)+".csv",sep=',',index=False)
+                            iT+=1
+                            T=[]
+                else:
+                    iP=((key%100)-ratioP1)//ratioP
+                    buffers[iP].append((db["Y"].get(i),db["Z"].get(i)))
+                    if len(buffers[iP])==pageSize:
+                        Temp=pd.DataFrame(buffers[iP],columns=['Y','Z'])
+                        Temp.to_csv('Data/'+folderName+"_hybrid_hash_partition/"+str(iP+1)+"/S_"+str(ibuffers[iP])+".csv",sep=',',index=False)
+                        ibuffers[iP]+=1
+                        buffers[iP]=[]
+
+        for iP,P in enumerate(buffers):
+
+            if P:
+                Temp=pd.DataFrame(P,columns=['Y','Z'])
+                Temp.to_csv('Data/'+folderName+"_hybrid_hash_partition/"+str(iP+1)+"/S_"+str(ibuffers[iP])+".csv",sep=',',index=False)
+
+        for i in range(B-1):
+            T,iT=simple_hash_join_file_loop(folderName+"_hybrid_hash_partition/"+str(i+1),memory,pageSize,T,iT,'Data/'+folderName+"_hybrid_hash")
+        if T:
+            T=pd.DataFrame(T,columns=['X','Y','Z'])
+            T.to_csv('Data/'+folderName+"_hybrid_hash/T_"+str(iT)+".csv",sep=',',index=False)
+
+        
+            
+    
+    elif math.ceil(nbPageR/(memory-1))<=memory-2:
+        print("grace")
+        grace_hash_join_file(folderName,memory,pageSize)
+    else:
+        print("Pas définie")
+        return None
+    
+
+
+def grace_hash_join_file(folderName,memory,pageSize):
+
+    assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
     nbPartition=memory-1
 
     if not os.path.exists('Data/'+folderName+"_grace_hash"):
@@ -26,7 +135,7 @@ def grace_hash_join_file(folderName,memory,pageSize):
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
 
-    assert memory<nbPageR-2, "Erreur : Utilise le simple"
+    assert math.ceil(nbPageR/(memory-1))<=memory-2, "Pas définie"
 
     buffers=[[] for _ in range(nbPartition)]
     ibuffers=[0 for _ in range(nbPartition)]
@@ -71,12 +180,12 @@ def grace_hash_join_file(folderName,memory,pageSize):
     iT=0
     T=[]
     for i in range(nbPartition):
-        T,iT=grace_simple_hash_join(folderName+"_grace_hash_partition/"+str(i),memory,pageSize,T,iT,'Data/'+folderName+"_grace_hash")
+        T,iT=simple_hash_join_file_loop(folderName+"_grace_hash_partition/"+str(i),memory,pageSize,T,iT,'Data/'+folderName+"_grace_hash")
     if T:
         T=pd.DataFrame(T,columns=['X','Y','Z'])
         T.to_csv('Data/'+folderName+"_grace_hash/T_"+str(iT)+".csv",sep=',',index=False)
 
-def grace_simple_hash_join(folderName,memory,pageSize,T,iT,TPath):
+def simple_hash_join_file_loop(folderName,memory,pageSize,T,iT,TPath):
 
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])

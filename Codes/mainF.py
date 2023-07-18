@@ -9,12 +9,12 @@ import time
 
 if __name__ == '__main__':
     
-    Rsize=1500
-    Ssize=10000
+    Rsize=57*32-5
+    Ssize=Rsize*2
     selectivity=1
-    memory=6
+    memory=10
     pageSize=32
-    folderName="R1000S10000Sel1"
+    folderName="R21S42Sel1"
 
     
     #cartesian_product_index_file(folderName,memory,pageSize)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     sort_merge_file(folderName,memory,pageSize)
     #simple_hash_join_file(folderName,memory,pageSize)
     #grace_hash_join_file(folderName,memory,pageSize)
-
+    #hybrid_hash_join_file(folderName,memory,pageSize)
 
 
     #90,1,205
