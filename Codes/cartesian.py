@@ -1,5 +1,6 @@
 from tools import *
 from index import *
+from sortMerge import *
 
 def cartesian_product_file(folderName,memory,pageSize):
     '''Jointure cartesienne selon R et S contenu dans le folder
@@ -78,44 +79,7 @@ def cartesian_product(folderName,selectivity,memory,pageSize):
   
     return th_read,th_written
 
-def cartesian_product_index(folderName,selectivity,memory,pageSize):
-    '''Renvoi une simulation memoire d'un join des tables R et S en utilisant un algorithme de produit cartésien indexe sur S'''
-    assert memory>=4, "Erreur : La memoire doit contenir au moins 4 pages"
-    
-    #metadonnées
-    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
-    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
-    idx=nbLevel(R_pages,pageSize)
 
-    print("Pages par niveau de l'index :",idx)
-
-        
-    #Build
-    read_build_th = R_pages + R_pages*(1+math.ceil(math.log(math.ceil(R_pages/memory),memory-1)))
-    #nombre pages index
-    written_build_th = sum(idx.values()) +read_build_th-R_pages
-    
-    #Probe
-    n=len(idx)# nombre de niveau a charger regulierement
-    free_space=memory-3
-    read=0
-    #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
-    while free_space-idx[(n-1)]>=0 and n>0:  
-        free_space-= idx[(n-1)]
-        read+=idx[(n-1)] #charge au moins une fois
-        n-=1
-    
-
-    #probe de s  + #les les tuples correspondant a E
-    read_probe_th = S_pages + nbTuplesS*n + selectivity*nbTuplesR  + read
-    write_probe_th =  math.ceil(math.ceil(nbTuplesR*selectivity)/pageSize)
-    
-    
-    
-    
-    return read_build_th+read_probe_th,written_build_th+write_probe_th
 
 
 def cartesian_product_index_file(folderName,memory,pageSize):
@@ -176,3 +140,97 @@ def cartesian_product_index_file(folderName,memory,pageSize):
     
     
 
+def cartesian_product_index_cost(folderName,selectivity,memory,pageSize):
+    '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) du cartesian_product_index_cost'''
+    
+    #metadonnées
+    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
+    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
+    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
+    
+    #Nombre de niveaux et pages par niveaux
+    idx=dict()
+    #Dernier niveau
+    idx[-1]=R_pages
+    #Les autres niveaux
+    dic=nbLevel(R_pages,pageSize)
+    for k,v in dic.items():
+        idx[k]=v
+    
+            
+    #Build
+    rR,wR,cR=sort_cost(folderName,"R",memory,pageSize)
+    
+    read_build = R_pages+rR
+    written_build = sum(dic.values()) +wR
+    cost_build = cR + nbTuplesR * MOVE
+    
+    # nombre de niveau 
+    n=len(idx)-1
+    free_space=memory-3
+    read=0
+    #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
+    while n>=0 and free_space-idx[(n-1)]>=0 :  
+        free_space-= idx[(n-1)]
+        n-=1
+    
+        
+    #probe
+    read_probe=  S_pages + nbTuplesS* (n+1)
+    write_probe = math.ceil(R_pages*selectivity)
+
+    cost= cost_build + nbTuplesS*COMP*(len(idx))  + (read_probe+write_probe)*IO + math.ceil(nbTuplesR*selectivity)*MOVE
+    read=read_probe+read_build
+    write=written_build+write_probe
+    
+            
+    return read,write,cost
+
+
+def cartesian_product_index_cost2(folderName,selectivity,memory,pageSize):
+    '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) du cartesian_product_index_cost'''
+    
+    #metadonnées
+    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
+    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
+    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
+    
+    #Nombre de niveaux et pages par niveaux
+    idx=dict()
+    #Dernier niveau
+    idx[-1]=S_pages
+    #Les autres niveaux
+    dic=nbLevel(S_pages,pageSize)
+    for k,v in dic.items():
+        idx[k]=v
+    
+            
+    #Build
+    rR,wR,cR=sort_cost(folderName,"S",memory,pageSize)
+    
+    read_build = S_pages+rR
+    written_build = sum(dic.values()) +wR
+    cost_build = cR + nbTuplesS * MOVE
+    
+    # nombre de niveau 
+    n=len(idx)-1
+    free_space=memory-3
+    read=0
+    #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
+    while n>=0 and free_space-idx[(n-1)]>=0 :  
+        free_space-= idx[(n-1)]
+        n-=1
+    
+        
+    #probe
+    read_probe=  R_pages + nbTuplesR* (n+1)
+    write_probe = math.ceil(R_pages*selectivity)
+
+    cost= cost_build + nbTuplesR*COMP*(len(idx))  + (read_probe+write_probe)*IO + math.ceil(nbTuplesR*selectivity)*MOVE
+    read=read_probe+read_build
+    write=written_build+write_probe
+    
+            
+    return read,write,cost

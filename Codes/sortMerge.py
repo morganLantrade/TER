@@ -136,152 +136,37 @@ def sort_merge_file(folderName,memory,pageSize):
         T=pd.DataFrame(T,columns=['X','Y','Z'])
         T.to_csv('Data/'+folderName+"_sm/T_"+str(iT)+".csv",sep=',',index=False)
 
-        
+    
+def sort_cost(folderName,dbName,memory,pageSize):
+    '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) de tri externe de dbName'''
+    #metadonnées
+    pages=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
+    nbTuples=((pages-1)*pageSize)+len(read_X_pages(folderName+"/"+dbName,pages,1).index)
+    nb_pass = 1+math.ceil(math.log(math.ceil(pages/memory),memory-1))
+    r=w=pages*nb_pass 
+    cost= nbTuples * math.log(nbTuples,2) * (MOVE+SWAP) + (r+w)*IO
 
+    return r,w,cost
+    
 
-def sort_merge(arr,i,memory,tuples_per_page):
-    '''Fonction qui appelle la fonction recursive merge qui renvoie la liste arr triée 
-    et le nombre de lecture et ecriture dans la memoire'''
-    read_count = 0
-
-    if len(arr) <= 1:
-        return arr, read_count
-    mid = len(arr) // 2
-    left_half = arr[:mid]
-    right_half = arr[mid:]
-
-    left_half, left_reads, left_writes = sort_merge(left_half,i)
-    right_half, right_reads, right_writes = sort_merge(right_half,i)
-
-    read_count += left_reads + right_reads
-
-    sorted_arr, merge_reads, merge_writes = merge(left_half, right_half,i)
-    read_count += merge_reads
-
-    return sorted_arr, math.ceil(len(arr)/tuples_per_page)
-
-
-def merge(left, right,i):
-    '''FOnction recursive qui effectue un tri fusion avec mémorisation des lectures et écritures dans la mémoire
-    selon i l'index pour lequel le tuple est trié  , 1 pour R et 0 pour S'''
-    merged = []
-    left_index = 0
-    right_index = 0
-    reads = 0
-    writes = 0
-
-    while left_index < len(left) and right_index < len(right):
-        if left[left_index][i] <= right[right_index][i]:
-            merged.append(left[left_index])
-            left_index += 1
-        else:
-            merged.append(right[right_index])
-            right_index += 1
-        writes += 1
-
-    while left_index < len(left):
-        merged.append(left[left_index])
-        left_index += 1
-        writes += 1
-
-    while right_index < len(right):
-        merged.append(right[right_index])
-        right_index += 1
-        writes += 1
-
-    reads += len(left) + len(right)
-    return merged, reads, writes
-
-
-def sort_merge_join(folderName,selectivity,memory,pageSize):
-    '''Renvoi le nombre de lecture et ecriture disque theorique en utilisant un algorithme de tri fusion'''
-
-   
-    ##Theoric##
+def sort_merge_join_cost(folderName,selectivity,memory,pageSize):
+    '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) de sort_merge_join'''
+    
     #metadonnées
     R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
     S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
     nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
+    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
     
     #Build
-    read_build_th = R_pages*(1+math.ceil(math.log(math.ceil(R_pages/memory),memory-1)))+S_pages*(1+math.ceil(math.log(math.ceil(S_pages/memory),memory-1)))
-    written_build_th = read_build_th
-
+    rR,wR,cR=sort_cost(folderName,"R",memory,pageSize)
+    rS,wS,cS=sort_cost(folderName,"S",memory,pageSize)
+    read_build,written_build,cost_build= rR+rS , wR+wS, cR+cS
+    
+   
     #Probe
-    read_probe_th=R_pages+S_pages
-    write_probe_th=math.ceil(math.ceil(nbTuplesR*selectivity)/pageSize)
+    read_probe=write_probe=R_pages+S_pages
+    cost= cR+cS + (nbTuplesR+nbTuplesS)*COMP + (read_build+written_build)*IO + math.ceil(nbTuplesR)*selectivity
 
-    '''
-
-    # Tri des deux tables au préalable
-    R,read1,written1=sort_merge(R.values.tolist(),1,memory,tuples_per_page)
-    S,read2,written2=sort_merge(S.values.tolist(),0,memory,tuples_per_page)
-    R=pd.DataFrame(R,columns=['X','Y'])
-    S=pd.DataFrame(S,columns=['Y','Z'])
-    T=[]
-    iR=0
-    iS=0
-    written=0
-    while iR<n and iS<m:
-        if R['Y'].get(iR)==S['Y'].get(iS): 
-            T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
-            written+=1
-            iS+=1
-            iR+=1
-            
-        elif R['Y'].get(iR)>S['Y'].get(iS):
-            iS+=1
-            
-        else:
-            iR+=1
     
-    read_probe_exp=math.ceil(iR/tuples_per_page)+math.ceil(iS/tuples_per_page)
-    written_probe_exp=math.ceil(written/tuples_per_page)
-
-    T=pd.DataFrame(T,columns=['X','Y','Z'])
-    return T,read_build_th,written_build_th,read_probe_th,write_probe_th,read_build_exp,written_build_exp,read_probe_exp,written_probe_exp
-
-    #return ,read1+read2,written1+written2,read,written'''
-    return read_build_th+read_probe_th,written_build_th+write_probe_th
-    
-
-#algo sort_merge doublon
-'''
-while iR<n :
-        read+=1 # le prochain Y
-        if iS==m :
-            if R['Y'].get(iR+1)==S['Y'].get(iS-1) :
-                iS-=1
-            
-                while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
-                    iS-=1
-                    read+=1
-
-                iS+=1
-                iR+=1
-                read+=2 #on incrémente des deux cotes
-                
-            else :
-                
-                return pd.DataFrame(T,columns=['X','Y','Z']),read1+read2,written1+written2,read,written
-        elif R['Y'].get(iR)==S['Y'].get(iS): 
-            T.append((R['X'].get(iR),R['Y'].get(iR),S['Z'].get(iS)))
-            written+=1
-            iS+=1
-            
-        elif R['Y'].get(iR)>S['Y'].get(iS):
-            iS+=1
-            
-        else:
-            iS-=1
-            
-            while R['Y'].get(iR)==S['Y'].get(iS): #gère le cas des doublons
-                iS-=1
-                read+=1
-
-            iS+=1
-            iR+=1
-            read+=2 #on incrémente des deux cotes
-
-    T=pd.DataFrame(T,columns=['X','Y','Z'])
-'''
+    return read_build+read_probe,written_build+write_probe,cost

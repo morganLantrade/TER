@@ -5,7 +5,16 @@ import os
 import csv
 from memory_profiler import profile
 import linecache
+import matplotlib.pyplot as plt
+import numpy as np
 
+
+#EXEMPLE DE TEMPS DES ACTIONS ( A MODIFIER POUR COLLER AUX PERFORMANCES DU PC)
+COMP=0.003
+HASH=0.009
+MOVE=0.020
+SWAP=0.060
+IO=30
 
 
 def read_line(name,page,line):
@@ -255,4 +264,28 @@ def test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_p
     print("Experimental Probe: \n")
     print('Lecture :',read_probe_exp,'/ Ecriture :',written_probe_exp)
     print("---")
+
+
+
+def plot_courbes(M,listes,cost=1,legende=["Sort_merge","Simple_Hash","Grace_Hash","Hybride_Hash","IndexR cartesian","IndexS cartesian"]):
+    # Vérification des longueurs des listes
+    longueur = len(listes[0])
+    if any(len(lst) != longueur for lst in listes):
+        raise ValueError("Les listes doivent avoir la même longueur.")
+
+    
+    for i in range(len(listes)):
+        listes[i]=np.array(listes[i])[:,cost]
+        plt.plot(M, listes[i], label=legende[i])
+
+    # Ajout des légendes et du titre
+    plt.legend()
+    plt.xlabel("Memoire (M)")
+    plt.ylabel("Cost "+"IO" if cost==0 else "Temps(ms)")
+    plt.title("Comparaisons des couts des différents algorithmes")
+
+    # Affichage du graphique
+    plt.show()
+    
+   
 
