@@ -3,25 +3,20 @@ from cartesian import *
 from tools import *
 from hash import *
 from index import *
-import time
 
 #Oral Mercredi 30 aout 13h30
 
 if __name__ == '__main__':
     
-    Rsize=57*32-5
+    Rsize=1000*32-5
     Ssize=Rsize*2
     selectivity=1
-    memory=10
+    memory=110
     pageSize=32
-    folderName="R21S42Sel1"
+    folderName="R101S202Sel1"
+    LMemory=[13,60,110]
 
     
-    #cartesian_product_index_file(folderName,memory,pageSize)
-    #cartesian_product_index(folderName,selectivity,memory,pageSize)
-    #cartesian_product_file(folderName,memory,pageSize)
-    #s,_,_,_=search_index(folderName,ram,free_space,level,704,stat,root)
-    #print(s)
     
 
     
@@ -30,16 +25,19 @@ if __name__ == '__main__':
     #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     #db_to_file(R,pageSize,folderName,"R")
     #db_to_file(S,pageSize,folderName,"S")
-    #index_to_file2("Run1","R",memory,pageSize)
-    #index_to_file("Run1",pageSize,"R")
-    #lvl=index_to_file(folderName,pageSize,"S")
-    #root=read_X_pages(folderName+"_idx2/I",486,1)
-    #
-    #
-    #seconds=time.time()
-    #
+
+    db=pd.DataFrame()
+    db2=read_X_pages(folderName+"/R",1,1) 
 
     #--------Test--------
+    H={0:0}
+    #
+    seconds=time.time()
+    #
+
+
+    #time_test(simple_hash_join_file,folderName,pageSize,LMemory)
+
 
     #Théorique
 
@@ -49,16 +47,28 @@ if __name__ == '__main__':
     #Pratique
 
     #cartesian_product_file(folderName,memory,pageSize)
-    sort_merge_file(folderName,memory,pageSize)
+    #sort_merge_file(folderName,memory,pageSize) #a modif
     #simple_hash_join_file(folderName,memory,pageSize)
-    #grace_hash_join_file(folderName,memory,pageSize)
+    #grace_hash_join_file(folderName,memory,pageSize) #a modif
     #hybrid_hash_join_file(folderName,memory,pageSize)
+    #L=[]
 
+    for i in range(1000000):
+        H[0]
+        
+        '''with open("Data/"+folderName+"/R_1.csv", newline='') as csvfile:
 
-    #90,1,205
-
-    #print("Done in : "+ str(round(time.time()-seconds,2))+"s")
+            spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+            a=next(spamreader)
+            for x,y in spamreader:
+                L.append((int(x),int(y)))
+    db=pd.DataFrame(L,columns=a)'''
+    
+    finalTime=time.time()-seconds
+    print("Done in : "+ str(finalTime)+"s")
+    
     #time.sleep(5)
+    print((finalTime*1000)/1000000)
 
 
 

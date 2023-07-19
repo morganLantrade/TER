@@ -7,15 +7,34 @@ from memory_profiler import profile
 import linecache
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 
 #EXEMPLE DE TEMPS DES ACTIONS ( A MODIFIER POUR COLLER AUX PERFORMANCES DU PC)
-COMP=0.003
-HASH=0.009
-MOVE=0.020
-SWAP=0.060
-IO=30
+#COMP=0.003
+#HASH=0.009
+#MOVE=0.020
+#SWAP=0.060
+#IO=30
+IOREAD=0.089
+IOWRITE=0.787
+COMP=0.0004
+HASH=0.0006
+MOVE=0.001
+SWAP=0.003
 
+
+def time_test(algo,folderName,pageSize,LMemory):
+
+    seconds=time.time()
+    LTime=[]
+    for memory in LMemory:
+
+        LTime.append(str(memory)+","+str(algo(folderName,memory,pageSize))+"\n")
+
+    with open("Data/"+folderName+"_"+algo.__name__+'.txt', 'w') as f:
+        f.writelines(LTime)
+    
 
 def read_line(name,page,line):
     '''Retourne le tuple correspondant selon la ligne et la page'''
