@@ -68,7 +68,7 @@ if __name__ == '__main__':
     #db_to_file(S,pageSize,folderName,"S")
 
     #test
-    M= [m for m in range(100,5000,100)]
+    M= [m for m in range(40,500,10)] + [ m for m in range(500,4000,100)]
     R=results_cost_join(folderName,selectivity,M,pageSize)
     plot_courbes(M,R,1)
     

@@ -461,7 +461,7 @@ def simple_hash_join_cost(folderName,selectivity,memory,pageSize):
         tmp=(B*(B-1)/2)*(Ar+As)
         read+= tmp 
         write+=tmp
-        cost += (B*(B+1)/2)*(Ar+As)*(HASH+MOVE) - nbTuplesS*MOVE + nbTuplesR*HASH + nbTuplesS*(COMP+HASH) + (read+write)*IO
+        cost += (B+1)/2*(nbTuplesR+nbTuplesS)*(HASH+MOVE) - nbTuplesS*MOVE + nbTuplesR*HASH + nbTuplesS*(COMP+HASH) + (read+write)*IO
    
     return read,write,cost
 
@@ -475,7 +475,7 @@ def grace_hash_join_cost(folderName,selectivity,memory,pageSize):
     nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
     
 
-    B=memory-1
+    B=memory-1 if memory-1 < R_pages else R_pages
     #Grace non defini
     if math.ceil(R_pages/B) > memory-2:
         print("Non définie")
@@ -515,8 +515,8 @@ def hybrid_hash_join_cost(folderName,selectivity,memory,pageSize):
     Ar=math.ceil((R_pages-Ar_0)/(B-1))
     As=math.ceil((S_pages-As_0)/(B-1))
 
-    read= R_pages+S_pages + (B-1) *(As+Ar)
-    write=  math.ceil(R_pages*selectivity)+ (B-1) *(As+Ar)
+    read= R_pages+S_pages + R_pages-Ar_0 + S_pages-As_0
+    write=  math.ceil(R_pages*selectivity)+ R_pages-Ar_0 + S_pages-As_0
     cost=(read+write)*IO + math.ceil(nbTuplesR*selectivity)*MOVE
     
     cost+= (nbTuplesR+nbTuplesS)*(HASH+MOVE) - As_0*MOVE + nbTuplesR*HASH + nbTuplesS*(HASH+COMP)
