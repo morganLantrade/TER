@@ -435,14 +435,13 @@ def simple_hash_join_file(folderName,memory,pageSize):
 
 
 
-def simple_hash_join_cost(folderName,selectivity,memory,pageSize):
+def simple_hash_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
     '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) du simple_hash_join'''
     
     #metadonnées
-    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
-    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
+    R_pages=math.ceil(nbTuplesR/pageSize)
+    S_pages=math.ceil(nbTuplesS/pageSize)
+    
     
     #Initialisation
     read= R_pages+S_pages 
@@ -465,14 +464,13 @@ def simple_hash_join_cost(folderName,selectivity,memory,pageSize):
    
     return read,write,cost
 
-def grace_hash_join_cost(folderName,selectivity,memory,pageSize):
+def grace_hash_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
     '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) du grace_hash_join'''
     
     #metadonnées
-    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
-    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
+    R_pages=math.ceil(nbTuplesR/pageSize)
+    S_pages=math.ceil(nbTuplesS/pageSize)
+    
     
 
     B=memory-1 if memory-1 < R_pages else R_pages
@@ -490,25 +488,24 @@ def grace_hash_join_cost(folderName,selectivity,memory,pageSize):
     
     return read,write,cost
 
-def hybrid_hash_join_cost(folderName,selectivity,memory,pageSize):
+def hybrid_hash_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
     '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) du hybride_hash_join'''
     
     #metadonnées
-    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
-    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
+    R_pages=math.ceil(nbTuplesR/pageSize)
+    S_pages=math.ceil(nbTuplesS/pageSize)
+    
     
 
     B= 1+ math.ceil((R_pages-memory+2)/(memory-3))
    
     #Equivalent au simple hash join
     if R_pages<=memory-2:
-        return simple_hash_join_cost(folderName,selectivity,memory,pageSize)
+        return simple_hash_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize)
     
     #Grace ou non defini
     if B> memory-2:
-        return grace_hash_join_cost(folderName,selectivity,memory,pageSize)
+        return grace_hash_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize)
     #Hybride
     Ar_0 = memory-2-(B-1)  
     As_0 = int(Ar_0/R_pages*S_pages)

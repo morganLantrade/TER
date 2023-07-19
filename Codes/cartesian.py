@@ -140,14 +140,12 @@ def cartesian_product_index_file(folderName,memory,pageSize):
     
     
 
-def cartesian_product_index_cost(folderName,selectivity,memory,pageSize):
+def cartesian_product_index_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
     '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) du cartesian_product_index_cost'''
     
     #metadonnées
-    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
-    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
+    R_pages=math.ceil(nbTuplesR/pageSize)
+    S_pages=math.ceil(nbTuplesS/pageSize)
     
     #Nombre de niveaux et pages par niveaux
     idx=dict()
@@ -160,7 +158,7 @@ def cartesian_product_index_cost(folderName,selectivity,memory,pageSize):
     
             
     #Build
-    rR,wR,cR=sort_cost(folderName,"R",memory,pageSize)
+    rR,wR,cR=sort_cost(nbTuplesR,memory,pageSize)
     
     read_build = R_pages+rR
     written_build = sum(dic.values()) +wR
@@ -188,14 +186,13 @@ def cartesian_product_index_cost(folderName,selectivity,memory,pageSize):
     return read,write,cost
 
 
-def cartesian_product_index_cost2(folderName,selectivity,memory,pageSize):
+def cartesian_product_index_cost2(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
     '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) du cartesian_product_index_cost'''
     
     #metadonnées
-    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
-    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
+    R_pages=math.ceil(nbTuplesR/pageSize)
+    S_pages=math.ceil(nbTuplesS/pageSize)
+    
     
     #Nombre de niveaux et pages par niveaux
     idx=dict()
@@ -208,7 +205,7 @@ def cartesian_product_index_cost2(folderName,selectivity,memory,pageSize):
     
             
     #Build
-    rR,wR,cR=sort_cost(folderName,"S",memory,pageSize)
+    rR,wR,cR=sort_cost(nbTuplesS,memory,pageSize)
     
     read_build = S_pages+rR
     written_build = sum(dic.values()) +wR

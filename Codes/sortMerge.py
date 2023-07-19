@@ -137,11 +137,11 @@ def sort_merge_file(folderName,memory,pageSize):
         T.to_csv('Data/'+folderName+"_sm/T_"+str(iT)+".csv",sep=',',index=False)
 
     
-def sort_cost(folderName,dbName,memory,pageSize):
+def sort_cost(nbTuples,memory,pageSize):
     '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) de tri externe de dbName'''
     #metadonnées
-    pages=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
-    nbTuples=((pages-1)*pageSize)+len(read_X_pages(folderName+"/"+dbName,pages,1).index)
+    pages=math.ceil(nbTuples/pageSize)
+    
     nb_pass = 1+math.ceil(math.log(math.ceil(pages/memory),memory-1))
     r=w=pages*nb_pass 
     cost= nbTuples * math.log(nbTuples,2) * (MOVE+SWAP) + (r+w)*IO
@@ -149,18 +149,17 @@ def sort_cost(folderName,dbName,memory,pageSize):
     return r,w,cost
     
 
-def sort_merge_join_cost(folderName,selectivity,memory,pageSize):
+def sort_merge_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
     '''Retourne le nombre de lectures,ecritures et le cout en temps(ms) de sort_merge_join'''
     
     #metadonnées
-    R_pages=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
-    S_pages=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
-    nbTuplesR=((R_pages-1)*pageSize)+len(read_X_pages(folderName+"/R",R_pages,1).index)
-    nbTuplesS=((S_pages-1)*pageSize)+len(read_X_pages(folderName+"/S",S_pages,1).index)
+    R_pages=math.ceil(nbTuplesR/pageSize)
+    S_pages=math.ceil(nbTuplesS/pageSize)
+    
     
     #Build
-    rR,wR,cR=sort_cost(folderName,"R",memory,pageSize)
-    rS,wS,cS=sort_cost(folderName,"S",memory,pageSize)
+    rR,wR,cR=sort_cost(nbTuplesR,memory,pageSize)
+    rS,wS,cS=sort_cost(nbTuplesS,memory,pageSize)
     read_build,written_build,cost_build= rR+rS , wR+wS, cR+cS
     
    

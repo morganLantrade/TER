@@ -166,7 +166,10 @@ def number_of_pages(dataframe,size_of_tuple,size_of_page,index="Not",size_key_in
         Idx[i]=1 #dernier niveau
     return nb_pages,Idx
 
-
+def nb_tuples(folderName,dbName,pageSize):
+    '''Retourne le nombre de tuple que contient dbName dans folrdername'''
+    nbPage=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
+    return ((nbPage-1)*pageSize)+len(read_X_pages(folderName+"/"+dbName,nbPage,1).index)
 
 def test_cartesian_product(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page):
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
