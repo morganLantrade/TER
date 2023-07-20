@@ -14,7 +14,7 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
     B=1+math.ceil((nbPageR-memory+2)/(memory-3))
     if nbPageR<=memory-2:
         print("simple")
-        simple_hash_join_file(folderName,memory,pageSize)
+        return simple_hash_join_file(folderName,memory,pageSize)
     elif B<=memory-2:
         print("hybrid")
         
@@ -36,9 +36,11 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
         for i in range(B-1):
             os.makedirs('Data/'+folderName+"_hybrid_hash_partition/"+str(i+1))
         
+        seconds=time.time()
+
         PSize1=memory-2-(B-1)
-        ratioP1=int((PSize1/nbPageR)*100)
-        ratioP=(100-ratioP1)//(B-1)
+        ratioP1=PSize1
+        ratioP=math.ceil((nbPageR-ratioP1)/(B-1))
         buffers=[[] for _ in range(B-1)]
         ibuffers=[0 for _ in range(B-1)]
         H=dict()
@@ -48,10 +50,10 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
             db=read_X_pages(folderName+"/R",pageR+1,1) 
             for i in range(len(db.index)):
                 key=int(db["Y"].get(i))
-                if key%100<ratioP1:
+                if key%nbPageR<ratioP1:
                     H[key]=db["X"].get(i)
                 else:
-                    iP=((key%100)-ratioP1)//ratioP
+                    iP=((key%nbPageR)-ratioP1)//ratioP
                     buffers[iP].append((db["X"].get(i),db["Y"].get(i)))
                     if len(buffers[iP])==pageSize:
                         Temp=pd.DataFrame(buffers[iP],columns=['X','Y'])
@@ -70,7 +72,7 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
             db=read_X_pages(folderName+"/S",pageS+1,1) 
             for i in range(len(db.index)):
                 key=int(db["Y"].get(i))
-                if key%100<ratioP1:
+                if key%nbPageR<ratioP1:
                     if key in H:
                         T.append((H[key],db["Y"].get(i),db["Z"].get(i)))
                         if len(T)==pageSize:
@@ -79,7 +81,7 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
                             iT+=1
                             T=[]
                 else:
-                    iP=((key%100)-ratioP1)//ratioP
+                    iP=((key%nbPageR)-ratioP1)//ratioP
                     buffers[iP].append((db["Y"].get(i),db["Z"].get(i)))
                     if len(buffers[iP])==pageSize:
                         Temp=pd.DataFrame(buffers[iP],columns=['Y','Z'])
@@ -99,22 +101,20 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hybrid_hash/T_"+str(iT)+".csv",sep=',',index=False)
 
-        
-            
-    
+        return round(time.time()-seconds,2)
+
     elif math.ceil(nbPageR/(memory-1))<=memory-2:
         print("grace")
-        grace_hash_join_file(folderName,memory,pageSize)
+        return grace_hash_join_file(folderName,memory,pageSize)
     else:
         print("Pas définie")
-        return None
+        return 0.0
     
 
 
 def grace_hash_join_file(folderName,memory,pageSize):
 
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
-    nbPartition=memory-1
 
     if not os.path.exists('Data/'+folderName+"_grace_hash"):
         os.makedirs('Data/'+folderName+"_grace_hash")
@@ -129,13 +129,20 @@ def grace_hash_join_file(folderName,memory,pageSize):
         for f in os.listdir("Data/"+folderName+"_grace_hash_partition"):
             delete_folder(folderName+"_grace_hash_partition/"+f)
 
-    for i in range(nbPartition):
-        os.makedirs('Data/'+folderName+"_grace_hash_partition/"+str(i))
+
 
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
 
+    
+    nbPartition=min(memory-1,nbPageR)
+
+    for i in range(nbPartition):
+        os.makedirs('Data/'+folderName+"_grace_hash_partition/"+str(i))
+
     assert math.ceil(nbPageR/(memory-1))<=memory-2, "Pas définie"
+
+    seconds=time.time()
 
     buffers=[[] for _ in range(nbPartition)]
     ibuffers=[0 for _ in range(nbPartition)]
@@ -184,12 +191,13 @@ def grace_hash_join_file(folderName,memory,pageSize):
     if T:
         T=pd.DataFrame(T,columns=['X','Y','Z'])
         T.to_csv('Data/'+folderName+"_grace_hash/T_"+str(iT)+".csv",sep=',',index=False)
+    return round(time.time()-seconds,2)
 
 def simple_hash_join_file_loop(folderName,memory,pageSize,T,iT,TPath):
 
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
-
+    
     nbPartitions= math.ceil(nbPageR/(memory-2))
     partitionSize= nbPageR//nbPartitions
     flag=0 # permet de supprimer les fichiers de la passe precedente
@@ -310,9 +318,11 @@ def simple_hash_join_file(folderName,memory,pageSize):
         #vide le contenu
         delete_file("T",folderName+"_hash")
     
-    
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
+
+    
+    seconds=time.time()
     T=[]
     iT=1
     
@@ -342,9 +352,9 @@ def simple_hash_join_file(folderName,memory,pageSize):
         if T:
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
+        return round(time.time()-seconds,2)
     #on divise R entre n table de taille M-2 de hachage 
     else:
-
         if not os.path.exists('Data/'+folderName+"_hash_temp"):
             os.makedirs('Data/'+folderName+"_hash_temp")
         else:
@@ -432,6 +442,7 @@ def simple_hash_join_file(folderName,memory,pageSize):
         if T:
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
+        return round(time.time()-seconds,2)
 
 
 

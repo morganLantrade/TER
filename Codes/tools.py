@@ -29,6 +29,14 @@ BUILD_LEGENDS = ["Sort_merge","Grace_Hash","IndexR cartesian"]
 
 MODE= { "I" : (0,LEGENDS) , "O" : (1,LEGENDS),"IO" : (2,LEGENDS), "Build Cost" : (3,BUILD_LEGENDS) , "Probe Cost": (4,BUILD_LEGENDS) , "Cost" : (5,LEGENDS)}
 
+def indexOfMin(L):
+    index=0
+    min=L[0]
+    for i in range(1,len(L)):
+        if L[i]<min:
+            min=L[i]
+            index=i
+    return index
 
 
 def time_test(algo,folderName,pageSize,LMemory):

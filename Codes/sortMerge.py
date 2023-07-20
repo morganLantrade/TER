@@ -16,6 +16,196 @@ def sort_file(folderName,memory,pageSize,dbName):
         delete_file(dbName,folderName+"_sorted",)
 
     nbMonotonie=0
+
+    ###########
+    # PASSE 0 #
+    ###########
+    #parcours par bloc de taille memoire
+    for i in range(0,nbPage,memory):
+        #dernier bloc
+        if (i==nbPage-(nbPage%memory)):
+            db=read_X_pages(folderName+"/"+dbName,(nbPage-(nbPage%memory))+1,nbPage%memory)
+            #tri quicksort de tout le bloc
+            db=db.sort_values(by=['Y'],kind='quicksort')
+            #ecriture du bloc en page
+            db_to_file(db,pageSize,folderName+"_sorted",dbName+"0_"+str(nbPage//memory))
+            nbMonotonie+=1
+        #tous les blocs de taille memoire
+        else:
+            db=read_X_pages(folderName+"/"+dbName,i+1,memory)
+            #tri quicksort de tout le bloc
+            db=db.sort_values(by=['Y'],kind='quicksort')
+            #ecriture du bloc en page
+            db_to_file(db,pageSize,folderName+"_sorted",dbName+"0_"+str(i//memory))
+            nbMonotonie+=1
+
+    ####################
+    # PASSES SUIVANTES #
+    ####################
+    passe=1
+    a,b = ("X","Y") if dbName =="R"  else ("Y","Z")
+
+    while nbMonotonie!=1: #derniere passe
+        
+        nbPageMonotonie=(memory*((memory-1)**(passe-1)))
+        #parcours des monotonies
+        
+        for i in range(0,nbMonotonie,memory-1):
+            buffer=[]
+            iB=1
+
+            if (i==nbMonotonie-(nbMonotonie%(memory-1))) :
+                nbPageLastMonotonie=(nbPageMonotonie if nbPage%nbPageMonotonie==0 else nbPage%nbPageMonotonie)
+                if (nbMonotonie%(memory-1))==1:
+                    for j in range(nbPageLastMonotonie):
+                        db=read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i),1,1)
+                        db.to_csv('Data/'+folderName+"_sorted/"+dbName+str(passe)+"_"+str(i//(memory-1))+"_"+str(iB)+".csv",sep=',',index=False)
+                        iB+=1
+                else:
+                    LDB=[read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+j),1,1) for j in range(nbMonotonie%(memory-1))]
+                    LiPage=[1]*((nbMonotonie%(memory-1)))
+                    LiTuple=[0]*((nbMonotonie%(memory-1)))
+                    iLastMonotonie=(nbMonotonie%(memory-1))-1
+                    while LDB:
+                        L=[LDB[j]["Y"].get(LiTuple[j]) for j in range(len(LDB))]
+                        indexMin=indexOfMin(L)
+                        buffer.append((LDB[indexMin][a].get(LiTuple[indexMin]),LDB[indexMin][b].get(LiTuple[indexMin])))
+                        if len(buffer)==pageSize:
+                            buffer=pd.DataFrame(buffer,columns=[a,b])
+                            buffer.to_csv('Data/'+folderName+"_sorted/"+dbName+str(passe)+"_"+str(i//(memory-1))+"_"+str(iB)+".csv",sep=',',index=False)
+                            iB+=1
+                            buffer=[]
+                        LiTuple[indexMin]+=1
+                        if indexMin==iLastMonotonie:
+                            #si la page est lue
+                            if LiTuple[indexMin]==len(LDB[indexMin].index): 
+                                LiTuple[indexMin]=0
+                                LiPage[indexMin]+=1
+                                #si c'était la dernière page de cette monotonie
+                                if LiPage[indexMin]==nbPageLastMonotonie+1:
+                                    del LDB[indexMin]
+                                    del LiPage[indexMin]
+                                    del LiTuple[indexMin]
+                                    iLastMonotonie=-1
+                                #sinon on charge la prochaine page de cette monotonie
+                                else:
+                                    LDB[indexMin]=read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+indexMin),LiPage[indexMin],1)
+                        else:
+                            #si la page est lue
+                            if LiTuple[indexMin]==pageSize:
+                                LiTuple[indexMin]=0 
+                                LiPage[indexMin]+=1
+                                #si c'était la dernière page de cette monotonie
+                                if LiPage[indexMin]==nbPageMonotonie+1:
+                                    del LDB[indexMin]
+                                    del LiPage[indexMin]
+                                    del LiTuple[indexMin]
+                                    iLastMonotonie-=1
+                                #sinon on charge la prochaine page de cette monotonie
+                                else:
+                                    LDB[indexMin]=read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+indexMin),LiPage[indexMin],1)
+                    if buffer :
+                        buffer=pd.DataFrame(buffer,columns=[a,b])
+                        buffer.to_csv('Data/'+folderName+"_sorted/"+dbName+str(passe)+"_"+str(i//(memory-1))+"_"+str(iB)+".csv",sep=',',index=False)
+            elif i==nbMonotonie-(memory-1):
+                nbPageLastMonotonie=(nbPageMonotonie if nbPage%nbPageMonotonie==0 else nbPage%nbPageMonotonie)
+                LDB=[read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+j),1,1) for j in range(memory-1)]
+                LiPage=[1]*(memory-1)
+                LiTuple=[0]*(memory-1)
+                iLastMonotonie=memory-2
+                while LDB:
+                    L=[LDB[j]["Y"].get(LiTuple[j]) for j in range(len(LDB))]
+                    indexMin=indexOfMin(L)
+                    buffer.append((LDB[indexMin][a].get(LiTuple[indexMin]),LDB[indexMin][b].get(LiTuple[indexMin])))
+                    if len(buffer)==pageSize:
+                        buffer=pd.DataFrame(buffer,columns=[a,b])
+                        buffer.to_csv('Data/'+folderName+"_sorted/"+dbName+str(passe)+"_"+str(i//(memory-1))+"_"+str(iB)+".csv",sep=',',index=False)
+                        iB+=1
+                        buffer=[]
+                    LiTuple[indexMin]+=1
+                    if indexMin==iLastMonotonie:
+                        #si la page est lue
+                        if LiTuple[indexMin]==len(LDB[indexMin].index): 
+                            LiTuple[indexMin]=0
+                            LiPage[indexMin]+=1
+                            #si c'était la dernière page de cette monotonie
+                            if LiPage[indexMin]==nbPageLastMonotonie+1:
+                                del LDB[indexMin]
+                                del LiPage[indexMin]
+                                del LiTuple[indexMin]
+                                iLastMonotonie=-1
+                            #sinon on charge la prochaine page de cette monotonie
+                            else:
+                                LDB[indexMin]=read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+indexMin),LiPage[indexMin],1)
+                    else:
+                        #si la page est lue
+                        if LiTuple[indexMin]==pageSize: 
+                            LiTuple[indexMin]=0
+                            LiPage[indexMin]+=1
+                            #si c'était la dernière page de cette monotonie
+                            if LiPage[indexMin]==nbPageMonotonie+1:
+                                del LDB[indexMin]
+                                del LiPage[indexMin]
+                                del LiTuple[indexMin]
+                                iLastMonotonie-=1
+                            #sinon on charge la prochaine page de cette monotonie
+                            else:
+                                LDB[indexMin]=read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+indexMin),LiPage[indexMin],1)
+                if buffer :
+                    buffer=pd.DataFrame(buffer,columns=[a,b])
+                    buffer.to_csv('Data/'+folderName+"_sorted/"+dbName+str(passe)+"_"+str(i//(memory-1))+"_"+str(iB)+".csv",sep=',',index=False)
+                
+            else:
+                LDB=[read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+j),1,1) for j in range(memory-1)]
+                LiPage=[1]*(memory-1)
+                LiTuple=[0]*(memory-1)
+                while LDB:
+                    L=[LDB[j]["Y"].get(LiTuple[j]) for j in range(len(LDB))]
+                    indexMin=indexOfMin(L)
+                    buffer.append((LDB[indexMin][a].get(LiTuple[indexMin]),LDB[indexMin][b].get(LiTuple[indexMin])))
+                    if len(buffer)==pageSize:
+                        buffer=pd.DataFrame(buffer,columns=[a,b])
+                        buffer.to_csv('Data/'+folderName+"_sorted/"+dbName+str(passe)+"_"+str(i//(memory-1))+"_"+str(iB)+".csv",sep=',',index=False)
+                        iB+=1
+                        buffer=[]
+                    LiTuple[indexMin]+=1
+                    #si la page est lue
+                    if LiTuple[indexMin]==pageSize:
+                        LiTuple[indexMin]=0 
+                        LiPage[indexMin]+=1
+                        #si c'était la dernière page de cette monotonie
+                        if LiPage[indexMin]==nbPageMonotonie+1:
+                            del LDB[indexMin]
+                            del LiPage[indexMin]
+                            del LiTuple[indexMin]
+                        #sinon on charge la prochaine page de cette monotonie
+                        else:
+                            LDB[indexMin]=read_X_pages(folderName+"_sorted/"+dbName+str(passe-1)+"_"+str(i+indexMin),LiPage[indexMin],1)
+                if buffer :
+                    buffer=pd.DataFrame(buffer,columns=[a,b])
+                    buffer.to_csv('Data/'+folderName+"_sorted/"+dbName+str(passe)+"_"+str(i//(memory-1))+"_"+str(iB)+".csv",sep=',',index=False)
+    
+        #passe suivante
+        nbMonotonie=math.ceil(nbMonotonie/(memory-1))
+        passe+=1
+
+    
+    return passe-1
+
+'''def sort_file(folderName,memory,pageSize,dbName):
+    #Effectue un tri externe du fichier dbName de la run folderName selon la memoire et la taille des pages
+    assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
+
+    #metadonnee
+    nbPage=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
+
+    if not os.path.exists('Data/'+folderName+"_sorted"):
+        os.makedirs('Data/'+folderName+"_sorted")
+    else:
+        #vide le contenu
+        delete_file(dbName,folderName+"_sorted",)
+
+    nbMonotonie=0
     passe=0
 
     ###########
@@ -67,8 +257,7 @@ def sort_file(folderName,memory,pageSize,dbName):
         #passe suivante
         nbMonotonie=math.ceil(nbMonotonie/(memory-1))
         passe+=1
-    return passe
-
+    return passe'''
 
 def sort_merge_file(folderName,memory,pageSize):
     '''Effectue un join de S et R contenus dans la run foldername selon la memoire et la taille de page'''
