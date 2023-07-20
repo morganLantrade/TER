@@ -68,30 +68,30 @@ if __name__ == '__main__':
     Rsize=32*1001
     Ssize=Rsize*2
     selectivity=1
-    memory=1000
+    memory=50
     pageSize=32
     folderName="Run3"
-    nbTuplesR,nbTuplesS=nb_tuples(folderName,"R",pageSize),nb_tuples(folderName,"S",pageSize)
+    M= [m for m in range(40,4000,20)]
     Mode= help_mode[5]
-    
-    '''
-        
+           
     #Generation de données
-
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     db_to_file(R,pageSize,folderName,"R")
     db_to_file(S,pageSize,folderName,"S") 
+    nbTuplesR,nbTuplesS=nb_tuples(folderName,"R",pageSize),nb_tuples(folderName,"S",pageSize)
 
-    '''
-
-    #test
     
-    M= [m for m in range(40,4000,20)]
-    for i in range(1000,1010):
+    
+    
+    #test
+    for i in range(50,51):
         print(i)
         test_cost_join(Rsize,Ssize,selectivity,i,pageSize)
     R=results_cost_join(Rsize,Ssize,selectivity,M,pageSize,Mode)
-    plot_courbes(M,R,Mode)
+    #timer= time.time()
+    #simple_hash_join_file(folderName,memory,pageSize)
+    #print(time.time()-timer)
+    #plot_courbes(M,R,Mode)
     
     
   
