@@ -144,9 +144,9 @@ def sort_cost(nbTuples,memory,pageSize):
     
     nb_pass = 1+math.ceil(math.log(math.ceil(pages/memory),memory-1))
     r=w=pages*nb_pass 
-    cost= nbTuples * math.log(nbTuples,2) * (MOVE+SWAP) + (r+w)*IO
+    cost= nbTuples * math.log(nbTuples,2) * (MOVE+SWAP) + (r*IO_READ+w*IO_WRITE)
 
-    return r,w,cost
+    return r,w,cost/1000
     
 
 def sort_merge_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
@@ -161,11 +161,11 @@ def sort_merge_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
     rR,wR,cR=sort_cost(nbTuplesR,memory,pageSize)
     rS,wS,cS=sort_cost(nbTuplesS,memory,pageSize)
     read_build,written_build,cost_build= rR+rS , wR+wS, cR+cS
-    
-   
-    #Probe
-    read_probe=write_probe=R_pages+S_pages
-    cost= cR+cS + (nbTuplesR+nbTuplesS)*COMP + (read_build+written_build)*IO + math.ceil(nbTuplesR)*selectivity
 
     
-    return read_build+read_probe,written_build+write_probe,cost
+    #Probe
+    read_probe=write_probe=R_pages+S_pages
+    cost_probe=(nbTuplesR+nbTuplesS)*COMP+(read_probe*IO_READ+write_probe*IO_WRITE)+ math.ceil(nbTuplesR)*selectivity 
+
+    
+    return read_build+read_probe,written_build+write_probe,cost_build,cost_probe/1000

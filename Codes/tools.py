@@ -10,18 +10,25 @@ import numpy as np
 import time
 
 
-#EXEMPLE DE TEMPS DES ACTIONS ( A MODIFIER POUR COLLER AUX PERFORMANCES DU PC)
+#EXEMPLE DE TEMPS DES ACTIONS ( A MODIFIER POUR COLLER AUX PERFORMANCES DU PC) en ms
 #COMP=0.003
 #HASH=0.009
 #MOVE=0.020
 #SWAP=0.060
 #IO=30
-IOREAD=0.089
-IOWRITE=0.787
+IO_READ=0.089
+IO_WRITE=0.787
 COMP=0.0004
 HASH=0.0006
 MOVE=0.001
 SWAP=0.003
+
+LEGENDS = ["Sort_merge","Simple_Hash","Grace_Hash","Hybride_Hash","IndexR cartesian","IndexS cartesian"]
+BUILD_LEGENDS = ["Sort_merge","Grace_Hash","IndexR cartesian"]
+
+
+MODE= { "I" : (0,LEGENDS) , "O" : (1,LEGENDS),"IO" : (2,LEGENDS), "Build Cost" : (3,BUILD_LEGENDS) , "Probe Cost": (4,BUILD_LEGENDS) , "Cost" : (5,LEGENDS)}
+
 
 
 def time_test(algo,folderName,pageSize,LMemory):
@@ -289,21 +296,24 @@ def test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_p
 
 
 
-def plot_courbes(M,listes,cost=1,legende=["Sort_merge","Simple_Hash","Grace_Hash","Hybride_Hash","IndexR cartesian","IndexS cartesian"]):
-    # Vérification des longueurs des listes
-    longueur = len(listes[0])
-    if any(len(lst) != longueur for lst in listes):
+def plot_courbes(M,lists,Mode="Cost"):
+
+    title,(x,label) = Mode, MODE[Mode]
+   
+
+    length= len(lists[0])
+    if any(len(lst) != length for lst in lists):
         raise ValueError("Les listes doivent avoir la même longueur.")
 
     
-    for i in range(len(listes)):
-        listes[i]=np.array(listes[i])[:,cost]
-        plt.plot(M, listes[i], label=legende[i])
+    for i in range(len(lists)):
+        lists[i]=np.array(lists[i])[:,x]
+        plt.plot(M, lists[i], label=label[i])
 
     # Ajout des légendes et du titre
     plt.legend()
     plt.xlabel("Memoire (M)")
-    plt.ylabel("Cost "+"IO" if cost==0 else "Temps(ms)")
+    plt.ylabel(title + (" in sec" if x!=0 else ""))
     plt.title("Comparaisons des couts des différents algorithmes")
 
     # Affichage du graphique

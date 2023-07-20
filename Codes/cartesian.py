@@ -162,7 +162,9 @@ def cartesian_product_index_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize
     
     read_build = R_pages+rR
     written_build = sum(dic.values()) +wR
-    cost_build = cR + nbTuplesR * MOVE
+    cost_build = cR + (nbTuplesR * MOVE)/1000
+    
+
     
     # nombre de niveau 
     n=len(idx)-1
@@ -177,13 +179,12 @@ def cartesian_product_index_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize
     #probe
     read_probe=  S_pages + nbTuplesS* (n+1)
     write_probe = math.ceil(R_pages*selectivity)
-
-    cost= cost_build + nbTuplesS*COMP*(len(idx))  + (read_probe+write_probe)*IO + math.ceil(nbTuplesR*selectivity)*MOVE
+    cost_probe= nbTuplesS*COMP*(len(idx))  + (read_probe*IO_READ+write_probe*IO_WRITE) + math.ceil(nbTuplesR*selectivity)*MOVE
     read=read_probe+read_build
     write=written_build+write_probe
     
             
-    return read,write,cost
+    return read,write,cost_build,cost_probe/1000
 
 
 def cartesian_product_index_cost2(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
@@ -209,7 +210,9 @@ def cartesian_product_index_cost2(nbTuplesR,nbTuplesS,selectivity,memory,pageSiz
     
     read_build = S_pages+rR
     written_build = sum(dic.values()) +wR
-    cost_build = cR + nbTuplesS * MOVE
+    cost_build = cR + (nbTuplesS * MOVE)/1000
+
+    
     
     # nombre de niveau 
     n=len(idx)-1
@@ -224,10 +227,9 @@ def cartesian_product_index_cost2(nbTuplesR,nbTuplesS,selectivity,memory,pageSiz
     #probe
     read_probe=  R_pages + nbTuplesR* (n+1)
     write_probe = math.ceil(R_pages*selectivity)
-
-    cost= cost_build + nbTuplesR*COMP*(len(idx))  + (read_probe+write_probe)*IO + math.ceil(nbTuplesR*selectivity)*MOVE
+    cost_probe= nbTuplesR*COMP*(len(idx))  + (read_probe*IO_READ+write_probe*IO_WRITE) + math.ceil(nbTuplesR*selectivity)*MOVE
     read=read_probe+read_build
     write=written_build+write_probe
     
             
-    return read,write,cost
+    return read,write,cost_build,cost_probe/1000
