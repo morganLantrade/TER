@@ -15,7 +15,7 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
 
 
     if nbPageR<=memory-2:
-        return simple_hash_join_file(folderName,memory,pageSize)+(time.time()-seconds)
+        return (time.time()-seconds)+simple_hash_join_file(folderName,memory,pageSize)
     elif B<=memory-2:
 
         
@@ -111,7 +111,7 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
         return timer+(time.time()-seconds)
 
     elif math.ceil(nbPageR/(memory-1))<=memory-2:
-        return grace_hash_join_file(folderName,memory,pageSize)+(time.time()-seconds)
+        return (time.time()-seconds)+grace_hash_join_file(folderName,memory,pageSize)
     else:
         print("Pas définie")
         return 0.0

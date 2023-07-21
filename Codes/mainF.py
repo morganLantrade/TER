@@ -6,25 +6,44 @@ from index import *
 
 #Oral Mercredi 30 aout 13h30
 
+def time_test(folderName,pageSize,LMemory,repetition,RunName):
+
+    seconds=time.time()
+    LTime=[]
+    for memory in LMemory:
+        LMean=[[] for _ in range(5)]
+        for i in range(repetition):
+            LMean[0].append(sort_merge_file(folderName,memory,pageSize))
+            LMean[1].append(simple_hash_join_file(folderName,memory,pageSize))
+            LMean[2].append(grace_hash_join_file(folderName,memory,pageSize))
+            LMean[3].append(hybrid_hash_join_file(folderName,memory,pageSize))
+            LMean[4].append(cartesian_product_index_file(folderName,memory,pageSize))
+            print("Répétition "+str(i+1)+" pour mémoire = "+str(memory)+" Done")
+        
+        LTime.append((memory,sum(LMean[0])/repetition,sum(LMean[1])/repetition,sum(LMean[2])/repetition,sum(LMean[3])/repetition,sum(LMean[4])/repetition))
+    T=pd.DataFrame(LTime,columns=["Memory"]+LEGENDS[:-1])
+    T.to_csv('TimeTest/'+folderName+"_"+RunName+".csv",sep=',',index=False)
+    return time.time()-seconds 
+
 if __name__ == '__main__':
     
     Rsize=(10*32)-5
     Ssize=Rsize*2
     selectivity=1
-    memory=13
+    memory=250
     pageSize=32
     folderName="R101S202Sel1"
-    LMemory=[13,60,110]
-
-    
+    LMemory=[13,59,103,250]
+    repetition=5
+    RunName=""
     
 
     
     #Generation de données
 
-    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    db_to_file(R,pageSize,folderName,"R")
-    db_to_file(S,pageSize,folderName,"S")
+    #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    #db_to_file(R,pageSize,folderName,"R")
+    #db_to_file(S,pageSize,folderName,"S")
 
     #db=read_X_pages(folderName+"/R",1,1)
     #L=[]
@@ -45,23 +64,26 @@ if __name__ == '__main__':
 
     #Pratique
 
+    # timer=cartesian_product_index_file(folderName,memory,pageSize)
+    # print("cartesian Done in : "+ str(timer)+"s")
+    # timer2=sort_merge_file(folderName,memory,pageSize) 
+    # print("sort merge Done in : "+ str(round(timer2,2))+"s")
+    # timer3=simple_hash_join_file(folderName,memory,pageSize)
+    # print("simple hash Done in : "+ str(round(timer3,2))+"s")
+    # timer4=grace_hash_join_file(folderName,memory,pageSize)
+    # print("grace hash Done in : "+ str(round(timer4,2))+"s")
+    # timer5=hybrid_hash_join_file(folderName,memory,pageSize)
+    # print("hybrid hash Done in : "+ str(round(timer5,2))+"s")
 
-    #timer=cartesian_product_file(folderName,memory,pageSize)
-    #timer=sort_merge_file(folderName,memory,pageSize) #a modif
-    timer=simple_hash_join_file(folderName,memory,pageSize)
-    #timer=grace_hash_join_file(folderName,memory,pageSize)
-    #timer=hybrid_hash_join_file(folderName,memory,pageSize)
-
-    print("Done in : "+ str(round(timer,2))+"s")
-    
+    timerTest=time_test(folderName,pageSize,LMemory,repetition)
+    print("Run done in : "+ str(round(timerTest,2))+"s")
     #time.sleep(5)
 
-
+    print("[■□□□□□□□□□□")
 
 
     #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
     #test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
     #test_sort_merge_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
     #test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
-    
     

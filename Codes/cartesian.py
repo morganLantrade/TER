@@ -97,13 +97,12 @@ def cartesian_product_index_file(folderName,memory,pageSize):
         #supprime tous les fichiers du repertoire run correspondant 
         delete_file("T",folderName+"_cpi") 
     
+    #Build
+    level,passe,timer=index_to_file2(folderName,"R",memory,pageSize)
+
     #metadonnées
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
     nbPageI=len([f for f in os.listdir("Data/"+folderName+"_idx2") if "I" in f])
-
-
-    #Build
-    level,passe,timer=index_to_file2(folderName,"R",memory,pageSize)
 
     seconds=time.time()
 

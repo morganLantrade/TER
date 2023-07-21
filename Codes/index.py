@@ -169,7 +169,6 @@ def nbLevel(nbPage,pageSize):
     Idx[i]=1 #dernier niveau
     return Idx
         
-@profile
 def index_to_file2(folderName,dbName,memory,pageSize):
     ''''Ecrit dans la run foldername_idx, l'index et retourne le nombre de niveaux'''
     if not os.path.exists('Data/'+folderName+"_idx2"):

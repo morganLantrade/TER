@@ -39,14 +39,6 @@ def indexOfMin(L):
     return index
 
 
-def time_test(algo,folderName,pageSize,LMemory):
-
-    seconds=time.time()
-    LTime=[]
-    for memory in LMemory:
-        LTime.append(str(memory)+","+str(algo(folderName,memory,pageSize))+"\n")
-    with open("Data/"+folderName+"_"+algo.__name__+'.txt', 'w') as f:
-        f.writelines(LTime)
     
 
 def read_line(name,page,line):

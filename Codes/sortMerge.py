@@ -271,15 +271,14 @@ def sort_merge_file(folderName,memory,pageSize):
         delete_file("T",folderName+"_sm",)
 
     
-    #metadonnees
-    nbPageR=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("R"+str(passeR)) in f])
-    nbPageS=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("S"+str(passeS)) in f])
-    
-
     #Tri les fichiers sur disque et revoie le nombre de passes pour chaque relation
     passeR,timer=sort_file(folderName,memory,pageSize,"R")
     passeS,timer2=sort_file(folderName,memory,pageSize,"S")
     timer+=timer2
+
+    #metadonnees
+    nbPageR=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("R"+str(passeR)) in f])
+    nbPageS=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("S"+str(passeS)) in f])
     
     seconds=time.time()
 
