@@ -8,22 +8,43 @@ from index import *
 
 def time_test(folderName,pageSize,LMemory,repetition,RunName):
 
+    clean_data(folderName)
+
+    print("["+" "*50+"] 0%", end="\r")
+
     seconds=time.time()
+    nbOfTests=repetition*5*len(LMemory)
     LTime=[]
+    iTest=0
     for memory in LMemory:
         LMean=[[] for _ in range(5)]
         for i in range(repetition):
             LMean[0].append(sort_merge_file(folderName,memory,pageSize))
+            iTest+=1
+            percentage=round(((iTest/nbOfTests)*100))
+            print("["+"■"*(percentage//2)+" "*(50-(percentage//2))+"] "+str(percentage)+"%", end="\r")
             LMean[1].append(simple_hash_join_file(folderName,memory,pageSize))
+            iTest+=1
+            percentage=round(((iTest/nbOfTests)*100))
+            print("["+"■"*(percentage//2)+" "*(50-(percentage//2))+"] "+str(percentage)+"%", end="\r")
             LMean[2].append(grace_hash_join_file(folderName,memory,pageSize))
+            iTest+=1
+            percentage=round(((iTest/nbOfTests)*100))
+            print("["+"■"*(percentage//2)+" "*(50-(percentage//2))+"] "+str(percentage)+"%", end="\r")
             LMean[3].append(hybrid_hash_join_file(folderName,memory,pageSize))
+            iTest+=1
+            percentage=round(((iTest/nbOfTests)*100))
+            print("["+"■"*(percentage//2)+" "*(50-(percentage//2))+"] "+str(percentage)+"%", end="\r")
             LMean[4].append(cartesian_product_index_file(folderName,memory,pageSize))
-            print("Répétition "+str(i+1)+" pour mémoire = "+str(memory)+" Done")
+            iTest+=1
+            percentage=round(((iTest/nbOfTests)*100))
+            print("["+"■"*(percentage//2)+" "*(50-(percentage//2))+"] "+str(percentage)+"%", end="\r")
         
         LTime.append((memory,sum(LMean[0])/repetition,sum(LMean[1])/repetition,sum(LMean[2])/repetition,sum(LMean[3])/repetition,sum(LMean[4])/repetition))
     T=pd.DataFrame(LTime,columns=["Memory"]+LEGENDS[:-1])
     T.to_csv('TimeTest/'+folderName+"_"+RunName+".csv",sep=',',index=False)
-    return time.time()-seconds 
+    print("["+"■"*50+"] 100%")
+    print("Run done in : "+ str(round((time.time()-seconds),2))+"s")
 
 if __name__ == '__main__':
     
@@ -33,9 +54,9 @@ if __name__ == '__main__':
     memory=250
     pageSize=32
     folderName="R101S202Sel1"
-    LMemory=[13,59,103,250]
-    repetition=5
-    RunName=""
+    LMemory=[250]
+    repetition=1
+    RunName="test"
     
 
     
@@ -74,12 +95,10 @@ if __name__ == '__main__':
     # print("grace hash Done in : "+ str(round(timer4,2))+"s")
     # timer5=hybrid_hash_join_file(folderName,memory,pageSize)
     # print("hybrid hash Done in : "+ str(round(timer5,2))+"s")
-
-    timerTest=time_test(folderName,pageSize,LMemory,repetition)
-    print("Run done in : "+ str(round(timerTest,2))+"s")
+    clean_data(folderName)
+    #time_test(folderName,pageSize,LMemory,repetition,RunName)
     #time.sleep(5)
 
-    print("[■□□□□□□□□□□")
 
 
     #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)

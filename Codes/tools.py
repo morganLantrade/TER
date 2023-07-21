@@ -76,7 +76,20 @@ def read_X_pages_legacy(name,i,x):
     
     return db
 
-
+def clean_data(folderName):
+    if os.path.exists('Data/'+folderName+"_grace_hash_partition"):
+        #vide le contenu
+        for f in os.listdir("Data/"+folderName+"_grace_hash_partition"):
+            delete_folder(folderName+"_grace_hash_partition/"+f)
+        os.rmdir("Data/"+folderName+"_grace_hash_partition")
+    if os.path.exists('Data/'+folderName+"_hybrid_hash_partition"):
+        #vide le contenu
+        for f in os.listdir("Data/"+folderName+"_hybrid_hash_partition"):
+            delete_folder(folderName+"_hybrid_hash_partition/"+f)
+        os.rmdir("Data/"+folderName+"_hybrid_hash_partition")
+    for f in os.listdir("Data"):
+        if folderName+"_" in f:
+            delete_folder(f)
 
 def delete_folder(folderName):
     delete_file("csv",folderName)
