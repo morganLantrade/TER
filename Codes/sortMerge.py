@@ -6,14 +6,16 @@ def sort_file(folderName,memory,pageSize,dbName):
     '''Effectue un tri externe du fichier dbName de la run folderName selon la memoire et la taille des pages'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
-    #metadonnee
-    nbPage=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
-
     if not os.path.exists('Data/'+folderName+"_sorted"):
         os.makedirs('Data/'+folderName+"_sorted")
     else:
         #vide le contenu
         delete_file(dbName,folderName+"_sorted",)
+
+    #metadonnee
+    nbPage=len([f for f in os.listdir("Data/"+folderName) if dbName in f])
+
+    seconds=time.time()
 
     nbMonotonie=0
 
@@ -190,7 +192,7 @@ def sort_file(folderName,memory,pageSize,dbName):
         passe+=1
 
     
-    return passe-1
+    return passe-1,time.time()-seconds
 
 '''def sort_file(folderName,memory,pageSize,dbName):
     #Effectue un tri externe du fichier dbName de la run folderName selon la memoire et la taille des pages
@@ -268,13 +270,18 @@ def sort_merge_file(folderName,memory,pageSize):
         #vide le contenu
         delete_file("T",folderName+"_sm",)
 
-    #Tri les fichiers sur disque et revoie le nombre de passes pour chaque relation
-    passeR=sort_file(folderName,memory,pageSize,"R")
-    passeS=sort_file(folderName,memory,pageSize,"S")
     
     #metadonnees
     nbPageR=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("R"+str(passeR)) in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName+"_sorted") if ("S"+str(passeS)) in f])
+    
+
+    #Tri les fichiers sur disque et revoie le nombre de passes pour chaque relation
+    passeR,timer=sort_file(folderName,memory,pageSize,"R")
+    passeS,timer2=sort_file(folderName,memory,pageSize,"S")
+    timer+=timer2
+    
+    seconds=time.time()
 
     #Initialisation
     iPageR=1
@@ -324,6 +331,7 @@ def sort_merge_file(folderName,memory,pageSize):
     if T:
         T=pd.DataFrame(T,columns=['X','Y','Z'])
         T.to_csv('Data/'+folderName+"_sm/T_"+str(iT)+".csv",sep=',',index=False)
+    return timer+(time.time()-seconds)
 
     
 def sort_cost(nbTuples,memory,pageSize):

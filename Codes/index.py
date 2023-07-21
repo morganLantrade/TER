@@ -177,13 +177,17 @@ def index_to_file2(folderName,dbName,memory,pageSize):
     else:
         #vide le contenu
         delete_file("I",folderName+"_idx2")
-    passe=sort_file(folderName,memory,pageSize,dbName)    
-    
 
+
+    passe,timer=sort_file(folderName,memory,pageSize,dbName)    
+    
     #metadonnees
     nbPageR=len([f for f in os.listdir("Data/"+folderName+"_sorted") if (dbName+str(passe)) in f])
     nb= nbLevel(nbPageR,pageSize)
     assert memory>=len(nb)+1, f'Erreur : La memoire doit contenir au moins {len(nb)+1} pages : 1 pour charger la page input et {len(nb)} buffer pour construire les niveaux'
+
+    seconds=time.time()
+    
     iR=0
     
     buffers= [ [] for _ in range(len(nb))] #nombre de buffers determine a l'avance
@@ -239,7 +243,7 @@ def index_to_file2(folderName,dbName,memory,pageSize):
     T=pd.DataFrame(buffers[len(nb)-1],columns=['X','Y'])
     T.to_csv('Data/'+folderName+"_idx2/I_"+str(iPage)+".csv",sep=',',index=False)
     iPage+=1
-    return len(nb),passe
+    return len(nb),passe,timer+(time.time()-seconds)
 
 
    

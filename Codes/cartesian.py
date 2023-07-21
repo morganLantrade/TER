@@ -7,21 +7,24 @@ def cartesian_product_file(folderName,memory,pageSize):
     pour une mémoire centrale et une taille de page donnée'''
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
+    if not os.path.exists('Data/'+folderName+"_cp"):
+        os.makedirs('Data/'+folderName+"_cp")
+    else:
+        #supprime tous les fichiers du repertoire run correspondant 
+        delete_file("T",folderName+"_cp") 
+
     #metadonnées
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if "R_" in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
+
+
+    seconds=time.time()
 
     #taille bloc
     b=memory-2
     
     T=[]
-    path='Data/'+folderName+"_cp"
     
-    if not os.path.exists(path):
-        os.makedirs(path)
-    else:
-        #supprime tous les fichiers du repertoire run correspondant 
-        delete_file("T",folderName+"_cp") 
     
 
     nbPageT=0
@@ -55,6 +58,7 @@ def cartesian_product_file(folderName,memory,pageSize):
     if T:
         #vide le buffer si il est non vide
         pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cp/T_"+str(nbPageT+1)+".csv",sep=',',index=False)
+    return time.time()-seconds
 
 
 
@@ -87,22 +91,21 @@ def cartesian_product_index_file(folderName,memory,pageSize):
     pour une mémoire centrale et une taille de page donnée'''
     assert memory>=4, "Erreur : La memoire doit contenir au moins 4 pages"
 
-    #Build
-    level,passe=index_to_file2(folderName,"R",memory,pageSize)
-
-    path='Data/'+folderName+"_cpi"
-    
-    if not os.path.exists(path):
-        os.makedirs(path)
+    if not os.path.exists('Data/'+folderName+"_cpi"):
+        os.makedirs('Data/'+folderName+"_cpi")
     else:
         #supprime tous les fichiers du repertoire run correspondant 
         delete_file("T",folderName+"_cpi") 
     
-
     #metadonnées
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if "S_" in f])
     nbPageI=len([f for f in os.listdir("Data/"+folderName+"_idx2") if "I" in f])
 
+
+    #Build
+    level,passe,timer=index_to_file2(folderName,"R",memory,pageSize)
+
+    seconds=time.time()
 
     #initialisation
     T=[]
@@ -137,6 +140,7 @@ def cartesian_product_index_file(folderName,memory,pageSize):
     if T:
         #vide le buffer si il est non vide
         pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cpi/T_"+str(iT)+".csv",sep=',',index=False)
+    return timer+(time.time()-seconds)
     
     
 

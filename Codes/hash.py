@@ -5,18 +5,21 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
 
     assert memory>=3, "Erreur : La memoire doit contenir au moins 3 pages"
 
-
-    
-
+    #métadonnées
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
 
+    seconds=time.time()
+
     B=1+math.ceil((nbPageR-memory+2)/(memory-3))
+
+
     if nbPageR<=memory-2:
-        print("simple")
-        return simple_hash_join_file(folderName,memory,pageSize)
+        return simple_hash_join_file(folderName,memory,pageSize)+(time.time()-seconds)
     elif B<=memory-2:
-        print("hybrid")
+
+        
+        timer=time.time()-seconds
         
         if not os.path.exists('Data/'+folderName+"_hybrid_hash"):
             os.makedirs('Data/'+folderName+"_hybrid_hash")
@@ -95,17 +98,20 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
                 Temp=pd.DataFrame(P,columns=['Y','Z'])
                 Temp.to_csv('Data/'+folderName+"_hybrid_hash_partition/"+str(iP+1)+"/S_"+str(ibuffers[iP])+".csv",sep=',',index=False)
 
+        timer+=time.time()-seconds
+
         for i in range(B-1):
-            T,iT=simple_hash_join_file_loop(folderName+"_hybrid_hash_partition/"+str(i+1),memory,pageSize,T,iT,'Data/'+folderName+"_hybrid_hash")
+            T,iT,timer2=simple_hash_join_file_loop(folderName+"_hybrid_hash_partition/"+str(i+1),memory,pageSize,T,iT,'Data/'+folderName+"_hybrid_hash")
+            timer+=timer2
+        seconds=time.time()
         if T:
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hybrid_hash/T_"+str(iT)+".csv",sep=',',index=False)
 
-        return round(time.time()-seconds,2)
+        return timer+(time.time()-seconds)
 
     elif math.ceil(nbPageR/(memory-1))<=memory-2:
-        print("grace")
-        return grace_hash_join_file(folderName,memory,pageSize)
+        return grace_hash_join_file(folderName,memory,pageSize)+(time.time()-seconds)
     else:
         print("Pas définie")
         return 0.0
@@ -134,7 +140,6 @@ def grace_hash_join_file(folderName,memory,pageSize):
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
 
-    
     nbPartition=min(memory-1,nbPageR)
 
     for i in range(nbPartition):
@@ -143,6 +148,8 @@ def grace_hash_join_file(folderName,memory,pageSize):
     assert math.ceil(nbPageR/(memory-1))<=memory-2, "Pas définie"
 
     seconds=time.time()
+    
+    nbPartition=min(memory-1,nbPageR)
 
     buffers=[[] for _ in range(nbPartition)]
     ibuffers=[0 for _ in range(nbPartition)]
@@ -186,126 +193,50 @@ def grace_hash_join_file(folderName,memory,pageSize):
     del buffers
     iT=0
     T=[]
+
+    timer=time.time()-seconds
+
     for i in range(nbPartition):
-        T,iT=simple_hash_join_file_loop(folderName+"_grace_hash_partition/"+str(i),memory,pageSize,T,iT,'Data/'+folderName+"_grace_hash")
+        T,iT,timer2=simple_hash_join_file_loop(folderName+"_grace_hash_partition/"+str(i),memory,pageSize,T,iT,'Data/'+folderName+"_grace_hash")
+        timer+=timer2
+
+    seconds=time.time()
+
     if T:
         T=pd.DataFrame(T,columns=['X','Y','Z'])
         T.to_csv('Data/'+folderName+"_grace_hash/T_"+str(iT)+".csv",sep=',',index=False)
-    return round(time.time()-seconds,2)
+    return timer+(time.time()-seconds)
 
 def simple_hash_join_file_loop(folderName,memory,pageSize,T,iT,TPath):
 
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
     
+    seconds=time.time()
+
     nbPartitions= math.ceil(nbPageR/(memory-2))
-    partitionSize= nbPageR//nbPartitions
-    flag=0 # permet de supprimer les fichiers de la passe precedente
+    assert nbPartitions==1, "Débordement de la mémoire"
     
     #R peut être hachee dans la memoire
-    if nbPartitions==1:
-        H=dict()
-        for pageR in range(nbPageR):
-            db=read_X_pages(folderName+"/R",pageR,1) 
-            for i in range(len(db.index)):
-                key=int(db["Y"].get(i))
-                H[key]=db["X"].get(i)
-        for i in range(nbPageS):
-            db=read_X_pages(folderName+"/S",i,1)
-            for j in range(len(db.index)):
-                key=int(db["Y"].get(j))
-                if key in H:
-                    T.append((H[key],db["Y"].get(j),db["Z"].get(j)))
-                    if len(T)==pageSize:
-                        T=pd.DataFrame(T,columns=['X','Y','Z'])
-                        T.to_csv(TPath+"/T_"+str(iT)+".csv",sep=',',index=False)
-                        iT+=1
-                        T=[]
-        return T,iT
-    #on divise R entre n table de taille M-2 de hachage 
-    else:
-
-        if not os.path.exists('Data/'+folderName+"_hash_temp"):
-            os.makedirs('Data/'+folderName+"_hash_temp")
-        else:
-            delete_file("csv",folderName+"_hash_temp")
-        
-        iPageR=1
-        iPartition=0
-        while iPartition<nbPartitions:
-            H=dict()
-            tempdb=[]
-            iS=0
-            iR=0
-            path1="_hash_temp" if iPartition!=0 else ""
-            path2="" if iPartition==0 else str(1-flag)        
-            #Parcours de R page par page
-            for pageR in range(nbPageR):
-                #SI partition 0 on lit R sinon R_temp
-                
-                
-                db=read_X_pages(folderName+path1+"/R"+path2,pageR,1) 
-                for i in range(len(db.index)):
-                    #Si la cle appartient a la partition iPartition
-                    key_p=int(db["Y"].get(i))
-                    if key_p%nbPartitions==iPartition:
-                        key=int(db["Y"].get(i))
-                        H[key]=db["X"].get(i)
-                    else:
-                        tempdb.append((db["X"].get(i),db["Y"].get(i)))
-                        #Temp_R plein
-                        if len(tempdb)==pageSize:
-                            
-                            tempdb=pd.DataFrame(tempdb,columns=['X','Y'])
-                            tempdb.to_csv('Data/'+folderName+"_hash_temp/R"+str(flag)+"_"+str(iR)+".csv",sep=',',index=False)
-                            iR+=1
-                            tempdb=[]
-
-            if tempdb:
-                tempdb=pd.DataFrame(tempdb,columns=['X','Y'])
-                tempdb.to_csv('Data/'+folderName+"_hash_temp/R"+str(flag)+"_"+str(iR)+".csv",sep=',',index=False)
-                tempdb=[]
-
-             
-            #Parcours de S page par page    
-            for pageS in range(nbPageS):
-                #SI partition 0 on lit R sinon R_temp
-                db=read_X_pages(folderName+path1+"/S"+path2,pageS,1) 
-                for j in range(len(db.index)):
-                    key_p=int(db["Y"].get(j))
-                    #Si la cle appartient a la partition iPartition
-                    if key_p%nbPartitions==iPartition:
-                        key=int(db["Y"].get(j))
-                        #Si la cle appartient a la in memory table H
-                        if key in H:
-                            T.append((H[key],db["Y"].get(j),db["Z"].get(j)))
-                            if len(T)==pageSize:
-                                T=pd.DataFrame(T,columns=['X','Y','Z'])
-                                T.to_csv(TPath+"/T_"+str(iT)+".csv",sep=',',index=False)
-                                iT+=1
-                                T=[]
-                            
-                    else:                        
-                        tempdb.append((db["Y"].get(j),db["Z"].get(j)))
-                        if len(tempdb)==pageSize:
-                            tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
-                            tempdb.to_csv('Data/'+folderName+"_hash_temp/S"+str(flag)+"_"+str(iS)+".csv",sep=',',index=False)
-                            iS+=1
-                            tempdb=[]
-            if tempdb:
-                tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
-                tempdb.to_csv('Data/'+folderName+"_hash_temp/S"+str(flag)+"_"+str(iS)+".csv",sep=',',index=False)
-                tempdb=[]
-                
-                
-            nbPageR=len([f for f in os.listdir("Data/"+folderName+"_hash_temp") if "R"+str(flag) in f])
-            nbPageS=len([f for f in os.listdir("Data/"+folderName+"_hash_temp") if "S"+str(flag) in f])
-            iPartition+=1
-            flag=1-flag
-            #supprime tous les fichiers temporaires de la passe d'avant
-            delete_file("R"+str(flag),folderName+"_hash_temp")
-            delete_file("S"+str(flag),folderName+"_hash_temp")
-        return T,iT
+    H=dict()
+    for pageR in range(nbPageR):
+        db=read_X_pages(folderName+"/R",pageR,1) 
+        for i in range(len(db.index)):
+            key=int(db["Y"].get(i))
+            H[key]=db["X"].get(i)
+    for i in range(nbPageS):
+        db=read_X_pages(folderName+"/S",i,1)
+        for j in range(len(db.index)):
+            key=int(db["Y"].get(j))
+            if key in H:
+                T.append((H[key],db["Y"].get(j),db["Z"].get(j)))
+                if len(T)==pageSize:
+                    T=pd.DataFrame(T,columns=['X','Y','Z'])
+                    T.to_csv(TPath+"/T_"+str(iT)+".csv",sep=',',index=False)
+                    iT+=1
+                    T=[]
+    return T,iT,time.time()-seconds
+    
         
 
 def simple_hash_join_file(folderName,memory,pageSize):
@@ -318,17 +249,16 @@ def simple_hash_join_file(folderName,memory,pageSize):
         #vide le contenu
         delete_file("T",folderName+"_hash")
     
+    #métadonnées
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
 
-    
     seconds=time.time()
+
     T=[]
     iT=1
     
     nbPartitions= math.ceil(nbPageR/(memory-2))
-    partitionSize= nbPageR//nbPartitions
-    flag=0 # permet de supprimer les fichiers de la passe precedente
     
     #R peut être hachee dans la memoire
     if nbPartitions==1:
@@ -352,33 +282,38 @@ def simple_hash_join_file(folderName,memory,pageSize):
         if T:
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
-        return round(time.time()-seconds,2)
+        return time.time()-seconds
     #on divise R entre n table de taille M-2 de hachage 
     else:
+
+        timer=time.time()-seconds
+
         if not os.path.exists('Data/'+folderName+"_hash_temp"):
             os.makedirs('Data/'+folderName+"_hash_temp")
         else:
             delete_file("csv",folderName+"_hash_temp")
-        
+
+        seconds=time.time()
+
+        passe=0
         iPageR=1
-        iPartition=0
-        while iPartition<nbPartitions:
+        while passe<nbPartitions:
             H=dict()
             tempdb=[]
             iS=1
             iR=1
-            path1="_hash_temp" if iPartition!=0 else ""
-            path2="" if iPartition==0 else str(1-flag)        
+            path1="_hash_temp" if passe!=0 else ""
+            path2=str(passe-1) if passe!=0 else  ""       
             #Parcours de R page par page
             for pageR in range(1,nbPageR+1):
-                #SI partition 0 on lit R sinon R_temp
+                #SI passe 0 on lit R sinon R_temp
                 
                 
                 db=read_X_pages(folderName+path1+"/R"+path2,pageR,1) 
                 for i in range(len(db.index)):
-                    #Si la cle appartient a la partition iPartition
+                    #Si la cle appartient a la partition passe
                     key_p=int(db["Y"].get(i))
-                    if key_p%nbPartitions==iPartition:
+                    if key_p%nbPartitions==passe:
                         key=int(db["Y"].get(i))
                         H[key]=db["X"].get(i)
                     else:
@@ -387,13 +322,13 @@ def simple_hash_join_file(folderName,memory,pageSize):
                         if len(tempdb)==pageSize:
                             
                             tempdb=pd.DataFrame(tempdb,columns=['X','Y'])
-                            tempdb.to_csv('Data/'+folderName+"_hash_temp/R"+str(flag)+"_"+str(iR)+".csv",sep=',',index=False)
+                            tempdb.to_csv('Data/'+folderName+"_hash_temp/R"+str(passe)+"_"+str(iR)+".csv",sep=',',index=False)
                             iR+=1
                             tempdb=[]
 
             if tempdb:
                 tempdb=pd.DataFrame(tempdb,columns=['X','Y'])
-                tempdb.to_csv('Data/'+folderName+"_hash_temp/R"+str(flag)+"_"+str(iR)+".csv",sep=',',index=False)
+                tempdb.to_csv('Data/'+folderName+"_hash_temp/R"+str(passe)+"_"+str(iR)+".csv",sep=',',index=False)
                 tempdb=[]
 
              
@@ -403,8 +338,8 @@ def simple_hash_join_file(folderName,memory,pageSize):
                 db=read_X_pages(folderName+path1+"/S"+path2,pageS,1) 
                 for j in range(len(db.index)):
                     key_p=int(db["Y"].get(j))
-                    #Si la cle appartient a la partition iPartition
-                    if key_p%nbPartitions==iPartition:
+                    #Si la cle appartient a la partition passe
+                    if key_p%nbPartitions==passe:
                         key=int(db["Y"].get(j))
                         #Si la cle appartient a la in memory table H
                         if key in H:
@@ -419,30 +354,27 @@ def simple_hash_join_file(folderName,memory,pageSize):
                         tempdb.append((db["Y"].get(j),db["Z"].get(j)))
                         if len(tempdb)==pageSize:
                             tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
-                            tempdb.to_csv('Data/'+folderName+"_hash_temp/S"+str(flag)+"_"+str(iS)+".csv",sep=',',index=False)
+                            tempdb.to_csv('Data/'+folderName+"_hash_temp/S"+str(passe)+"_"+str(iS)+".csv",sep=',',index=False)
                             iS+=1
                             tempdb=[]
             if tempdb:
                 tempdb=pd.DataFrame(tempdb,columns=['Y','Z'])
-                tempdb.to_csv('Data/'+folderName+"_hash_temp/S"+str(flag)+"_"+str(iS)+".csv",sep=',',index=False)
+                tempdb.to_csv('Data/'+folderName+"_hash_temp/S"+str(passe)+"_"+str(iS)+".csv",sep=',',index=False)
                 tempdb=[]
                 
-                
-            nbPageR=len([f for f in os.listdir("Data/"+folderName+"_hash_temp") if "R"+str(flag) in f])
-            nbPageS=len([f for f in os.listdir("Data/"+folderName+"_hash_temp") if "S"+str(flag) in f])
-            iPartition+=1
-            flag=1-flag
-            #supprime tous les fichiers temporaires de la passe d'avant
-            delete_file("R"+str(flag),folderName+"_hash_temp")
-            delete_file("S"+str(flag),folderName+"_hash_temp")
-            
+            timer+=time.time()-seconds
 
+            nbPageR=len([f for f in os.listdir("Data/"+folderName+"_hash_temp") if "R"+str(passe) in f])
+            nbPageS=len([f for f in os.listdir("Data/"+folderName+"_hash_temp") if "S"+str(passe) in f])
 
+            seconds=time.time()
+
+            passe+=1
 
         if T:
             T=pd.DataFrame(T,columns=['X','Y','Z'])
             T.to_csv('Data/'+folderName+"_hash/T_"+str(iT)+".csv",sep=',',index=False)
-        return round(time.time()-seconds,2)
+        return timer+(time.time()-seconds)
 
 
 

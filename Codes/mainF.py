@@ -8,12 +8,12 @@ from index import *
 
 if __name__ == '__main__':
     
-    Rsize=(1001*32)
+    Rsize=(10*32)-5
     Ssize=Rsize*2
     selectivity=1
-    memory=50
+    memory=13
     pageSize=32
-    folderName="R1001S2002Sel1"
+    folderName="R101S202Sel1"
     LMemory=[13,60,110]
 
     
@@ -22,9 +22,9 @@ if __name__ == '__main__':
     
     #Generation de données
 
-    #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    #db_to_file(R,pageSize,folderName,"R")
-    #db_to_file(S,pageSize,folderName,"S")
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    db_to_file(R,pageSize,folderName,"R")
+    db_to_file(S,pageSize,folderName,"S")
 
     #db=read_X_pages(folderName+"/R",1,1)
     #L=[]
@@ -45,16 +45,14 @@ if __name__ == '__main__':
 
     #Pratique
 
-    seconds=time.time()
 
-    #cartesian_product_file(folderName,memory,pageSize)
-    #sort_merge_file(folderName,memory,pageSize) #a modif
-    #simple_hash_join_file(folderName,memory,pageSize) #a modif delete file
-    #grace_hash_join_file(folderName,memory,pageSize)
-    hybrid_hash_join_file(folderName,memory,pageSize)
+    #timer=cartesian_product_file(folderName,memory,pageSize)
+    #timer=sort_merge_file(folderName,memory,pageSize) #a modif
+    timer=simple_hash_join_file(folderName,memory,pageSize)
+    #timer=grace_hash_join_file(folderName,memory,pageSize)
+    #timer=hybrid_hash_join_file(folderName,memory,pageSize)
 
-    finalTime=time.time()-seconds
-    print("Done in : "+ str(finalTime)+"s")
+    print("Done in : "+ str(round(timer,2))+"s")
     
     #time.sleep(5)
 
