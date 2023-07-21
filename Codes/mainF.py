@@ -44,7 +44,11 @@ def time_test(folderName,pageSize,LMemory,repetition,RunName):
     T=pd.DataFrame(LTime,columns=["Memory"]+LEGENDS[:-1])
     T.to_csv('TimeTest/'+folderName+"_"+RunName+".csv",sep=',',index=False)
     print("["+"■"*50+"] 100%")
-    print("Run done in : "+ str(round((time.time()-seconds),2))+"s")
+    timer=round(time.time()-seconds)
+    second=timer%60
+    minute=((timer-seconds)//60)%60
+    heure=(((timer-seconds)//60)-minute)//60
+    print("Run done in : "+ str(heure)+"h "+str(minute)+"m "+str(second)+"s")
 
 if __name__ == '__main__':
     
@@ -54,9 +58,9 @@ if __name__ == '__main__':
     memory=250
     pageSize=32
     folderName="R101S202Sel1"
-    LMemory=[250]
-    repetition=1
-    RunName="test"
+    LMemory=[i for i in range (13,52,3)]+[i for i in range (52,103,5)]+[i for i in range (103,210,15)]+[210,210]
+    repetition=3
+    RunName="grosrunsamèr"
     
 
     
@@ -95,8 +99,7 @@ if __name__ == '__main__':
     # print("grace hash Done in : "+ str(round(timer4,2))+"s")
     # timer5=hybrid_hash_join_file(folderName,memory,pageSize)
     # print("hybrid hash Done in : "+ str(round(timer5,2))+"s")
-    clean_data(folderName)
-    #time_test(folderName,pageSize,LMemory,repetition,RunName)
+    time_test(folderName,pageSize,LMemory,repetition,RunName)
     #time.sleep(5)
 
 
