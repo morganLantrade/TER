@@ -35,7 +35,7 @@ def test_cost_join(nbTupleR,nbTuplesS,selectivity,memory,pageSize):
 
 def results_cost_join(nbTupleR,nbTuplesS,selectivity,M,pageSize,Mode):
     
-    if 1<= MODE[Mode][0]<=2:
+    if 3<= MODE[Mode][0]<=4:
         R= [ [] for _ in range(3)]
         for memory in M:
              I,O,cost_build,cost_probe = sort_merge_join_cost(nbTupleR,nbTuplesS,selectivity,memory,pageSize)
@@ -46,7 +46,7 @@ def results_cost_join(nbTupleR,nbTuplesS,selectivity,M,pageSize,Mode):
              R[2].append((I,O,I+O,cost_build,cost_probe,cost_build+cost_probe))
              
     else:
-        R= [ [] for _ in range(6)]
+        R= [ [] for _ in range(5)]
         for memory in M:
              I,O,cost_build,cost_probe = sort_merge_join_cost(nbTupleR,nbTuplesS,selectivity,memory,pageSize)
              R[0].append((I,O,I+O,cost_build,cost_probe,cost_build+cost_probe))
@@ -58,40 +58,49 @@ def results_cost_join(nbTupleR,nbTuplesS,selectivity,M,pageSize,Mode):
              R[3].append((I,O,I+O,cost_build,cost_probe,cost_build+cost_probe))
              I,O,cost_build,cost_probe = cartesian_product_index_cost(nbTupleR,nbTuplesS,selectivity,memory,pageSize)
              R[4].append((I,O,I+O,cost_build,cost_probe,cost_build+cost_probe))
-             I,O,cost_build,cost_probe = cartesian_product_index_cost2(nbTupleR,nbTuplesS,selectivity,memory,pageSize)
-             R[5].append((I,O,I+O,cost_build,cost_probe,cost_build+cost_probe))
+             #I,O,cost_build,cost_probe = cartesian_product_index_cost2(nbTupleR,nbTuplesS,selectivity,memory,pageSize)
+             #R[5].append((I,O,I+O,cost_build,cost_probe,cost_build+cost_probe))
 
     return R
 
+
+
 if __name__ == '__main__':
-    help_mode= ["I","O","IO","Build Cost","Probe Cost","Cost"]
-    Rsize=32*1001
+    help_mode= ["I","O","IO","Build Cost","Probe Cost","Cost","Experimental"]
+    Rsize=32*101
     Ssize=Rsize*2
     selectivity=1
     memory=50
     pageSize=32
-    folderName="Run3"
-    M= [m for m in range(40,4000,20)]
-    Mode= help_mode[5]
-           
+    folderName="R101S202Sel1"
+    name="grosrunsamèr"
+    M= [m for m in range(13,4000,20)]
+    Mode1= help_mode[6]
+    Mode2= help_mode[2]
+    '''       
     #Generation de données
     R,S=generate_db(Rsize,Ssize,selectivity,double=False)
     db_to_file(R,pageSize,folderName,"R")
     db_to_file(S,pageSize,folderName,"S") 
     nbTuplesR,nbTuplesS=nb_tuples(folderName,"R",pageSize),nb_tuples(folderName,"S",pageSize)
-
+    '''
     
     
-    
+    M,R2=read_result(folderName,name)
     #test
+    '''
     for i in range(50,51):
         print(i)
         test_cost_join(Rsize,Ssize,selectivity,i,pageSize)
-    R=results_cost_join(Rsize,Ssize,selectivity,M,pageSize,Mode)
+    '''
+    R1=results_cost_join(Rsize,Ssize,selectivity,M,pageSize,Mode2)
+    
+    
     #timer= time.time()
     #simple_hash_join_file(folderName,memory,pageSize)
     #print(time.time()-timer)
-    #plot_courbes(M,R,Mode)
+    #plot_courbes(M,R1,Mode)
+    plot_courbes(M,R1,Mode2)
     
     
   

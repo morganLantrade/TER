@@ -27,7 +27,7 @@ LEGENDS = ["Sort_merge","Simple_Hash","Grace_Hash","Hybride_Hash","IndexR cartes
 BUILD_LEGENDS = ["Sort_merge","Grace_Hash","IndexR cartesian"]
 
 
-MODE= { "I" : (0,LEGENDS) , "O" : (1,LEGENDS),"IO" : (2,LEGENDS), "Build Cost" : (3,BUILD_LEGENDS) , "Probe Cost": (4,BUILD_LEGENDS) , "Cost" : (5,LEGENDS)}
+MODE= { "I" : (0,LEGENDS) , "O" : (1,LEGENDS),"IO" : (2,LEGENDS), "Build Cost" : (3,BUILD_LEGENDS) , "Probe Cost": (4,BUILD_LEGENDS) , "Cost" : (5,LEGENDS) ,"Experimental" : (6,LEGENDS[:-1]) }
 
 def indexOfMin(L):
     index=0
@@ -39,7 +39,21 @@ def indexOfMin(L):
     return index
 
 
-    
+def read_result(folderName,name):
+    '''Retourne une liste de tuple correspondant aux resultats des algos en temps(sec)'''
+    L=[]
+    with open("TimeTest/"+folderName+"_"+name+".csv", newline='') as csvfile:
+            spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+            label=next(spamreader)
+            for a,b,c,d,e,f in spamreader:
+                L.append((int(a),float(b),float(c),float(d),float(e),float(f)))
+    db=pd.DataFrame(L,columns=label)
+    results= [ [] for _ in range(5)]
+    M= db["Memory"].values.tolist()         
+    for i in range(len(LEGENDS)-1):
+        results[i]= db[LEGENDS[i]].values.tolist()      
+    return M,results
+
 
 def read_line(name,page,line):
     '''Retourne le tuple correspondant selon la ligne et la page'''
@@ -310,7 +324,7 @@ def test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_p
 def plot_courbes(M,lists,Mode="Cost"):
 
     title,(x,label) = Mode, MODE[Mode]
-   
+    
 
     length= len(lists[0])
     if any(len(lst) != length for lst in lists):
@@ -318,8 +332,12 @@ def plot_courbes(M,lists,Mode="Cost"):
 
     
     for i in range(len(lists)):
-        lists[i]=np.array(lists[i])[:,x]
-        plt.plot(M, lists[i], label=label[i])
+        lists[i]=np.array(lists[i])
+        if x!=6: #plusieurs dimension = theorique
+            lists[i] = lists[i][:,x]
+            plt.plot(M, lists[i], label=label[i])
+        else: #experimental
+            plt.plot(M, lists[i],"-p",markersize=3, label=label[i])
 
     # Ajout des légendes et du titre
     plt.legend()
