@@ -85,12 +85,12 @@ if __name__ == '__main__':
     nbTuplesR,nbTuplesS=nb_tuples(folderName,"R",pageSize),nb_tuples(folderName,"S",pageSize)
     '''
     
-    print(cartesian_product_index_file("Run3",250,32))
+    print(cartesian_product_index_file("Run3",59,32))
     time.sleep(5)
     #M,R2=read_result(folderName,name)
     #test
     
-    for i in range(250,251):
+    for i in range(120,121):
         print(i)
         test_cost_join(Rsize,Ssize,selectivity,i,pageSize)
     
@@ -103,5 +103,5 @@ if __name__ == '__main__':
     #plot_courbes(M,R1,Mode)
     plot_courbes(M,R1,Mode2)
     
-    #3508
+    #3507
   

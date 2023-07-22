@@ -311,7 +311,7 @@ def update_stat(stat,level,num_page):
         if level>lvl:
             stat[-1]=num_page,level,stat[level][num_page]
         #le niveau a été charge plus de fois donc moins problable d'etre rappele
-        elif level==lvl and cpt<stat[level][num_page]:
+        elif level==lvl and cpt<stat[level][num_page] and num_page!=1 and num_page!=104:
             stat[-1]=num_page,level,stat[level][num_page]
 
 
@@ -338,7 +338,6 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
         
         search=search_in_memory(ram,next_page,key,lvl,level)
         if search==False:
-            
             load_in_memory(folderName,ram,free_space,next_page,stat)
             free_space-=1
             next_page=search_in_memory(ram,next_page,key,lvl,level)
@@ -349,7 +348,7 @@ def search_index(folderName,ram,free_space,level,key,stat,num_page):
 
         #update stat
         update_stat(stat,lvl,num_page)
-        
+    
      
         
       

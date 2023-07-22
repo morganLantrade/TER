@@ -112,15 +112,14 @@ def cartesian_product_index_file(folderName,memory,pageSize):
     ram=dict()
     stat=dict()
     free_space=memory-3
-    
+
     for PageS in range(1,nbPageS+1):
         S=read_X_pages(folderName+"/S",PageS,1)
         for i in range(len(S.index)):
             y,z = int(S["Y"].get(i)),int(S["Z"].get(i))
             search,ram,stat,free_space =search_index(folderName,ram,free_space,level,y,stat,nbPageI)
-            
+                        
             if search is not None:
-
                 page=(search+1)//pageSize +int((search+1)%pageSize!=0)
                 line= search%pageSize +2
                 
@@ -173,18 +172,25 @@ def cartesian_product_index_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize
     n=len(idx)-1
     free_space=memory-3
     read=0
+    
     #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
     while n>=0 and free_space-idx[(n-1)]>=0 :  
         free_space-= idx[(n-1)]
         read+=idx[(n-1)]
         n-=1
+    if n>=0:
+        ratio=free_space/idx[(n-1)]
+    else: 
+        ratio=0
     
         
     #probe
     if n>0:
-        read_probe=  S_pages + nbTuplesS* n + math.ceil(R_pages*selectivity) + read 
-    else: 
-        read_probe=  S_pages + math.ceil(R_pages*selectivity) + read - R_pages
+        read_probe=  S_pages + nbTuplesS* (n- ratio) + math.ceil(nbTuplesR*selectivity) + read 
+    elif n==0: 
+        read_probe=  S_pages +  math.ceil(nbTuplesR*selectivity)*(1-ratio) + read 
+    else:
+        read_probe=  S_pages + read
     write_probe = math.ceil(R_pages*selectivity)
     cost_probe= nbTuplesS*COMP*(len(idx))  + (read_probe*IO_READ+write_probe*IO_WRITE) + math.ceil(nbTuplesR*selectivity)*MOVE
     read=read_probe+read_build
