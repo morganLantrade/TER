@@ -46,8 +46,8 @@ def time_test(folderName,pageSize,LMemory,repetition,RunName):
     print("["+"■"*50+"] 100%")
     timer=round(time.time()-seconds)
     second=timer%60
-    minute=((timer-seconds)//60)%60
-    heure=(((timer-seconds)//60)-minute)//60
+    minute=((timer-second)//60)%60
+    heure=(((timer-second)//60)-minute)//60
     print("Run done in : "+ str(heure)+"h "+str(minute)+"m "+str(second)+"s")
 
 if __name__ == '__main__':
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # print("grace hash Done in : "+ str(round(timer4,2))+"s")
     # timer5=hybrid_hash_join_file(folderName,memory,pageSize)
     # print("hybrid hash Done in : "+ str(round(timer5,2))+"s")
-    time_test(folderName,pageSize,LMemory,repetition,RunName)
+    #time_test(folderName,pageSize,LMemory,repetition,RunName)
     #time.sleep(5)
 
 
