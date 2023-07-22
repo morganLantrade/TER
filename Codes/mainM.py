@@ -74,7 +74,7 @@ if __name__ == '__main__':
     pageSize=32
     folderName="R101S202Sel1"
     name="grosrunsamèr"
-    M= [m for m in range(13,4000,20)]
+    M= [m for m in range(13,400,1)]
     Mode1= help_mode[6]
     Mode2= help_mode[2]
     '''       
@@ -85,22 +85,23 @@ if __name__ == '__main__':
     nbTuplesR,nbTuplesS=nb_tuples(folderName,"R",pageSize),nb_tuples(folderName,"S",pageSize)
     '''
     
-    
-    M,R2=read_result(folderName,name)
+    print(cartesian_product_index_file("Run3",250,32))
+    time.sleep(5)
+    #M,R2=read_result(folderName,name)
     #test
-    '''
-    for i in range(50,51):
+    
+    for i in range(250,251):
         print(i)
         test_cost_join(Rsize,Ssize,selectivity,i,pageSize)
-    '''
+    
     R1=results_cost_join(Rsize,Ssize,selectivity,M,pageSize,Mode2)
     
-    
+    #14325
     #timer= time.time()
     #simple_hash_join_file(folderName,memory,pageSize)
     #print(time.time()-timer)
     #plot_courbes(M,R1,Mode)
     plot_courbes(M,R1,Mode2)
     
-    
+    #3508
   

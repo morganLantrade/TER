@@ -176,11 +176,15 @@ def cartesian_product_index_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize
     #tant qu'on peut stocker les niveaux de l'index dans la mémoire on réduit le nombre de niveau a charger
     while n>=0 and free_space-idx[(n-1)]>=0 :  
         free_space-= idx[(n-1)]
+        read+=idx[(n-1)]
         n-=1
     
         
     #probe
-    read_probe=  S_pages + nbTuplesS* (n+1)
+    if n>0:
+        read_probe=  S_pages + nbTuplesS* n + math.ceil(R_pages*selectivity) + read 
+    else: 
+        read_probe=  S_pages + math.ceil(R_pages*selectivity) + read - R_pages
     write_probe = math.ceil(R_pages*selectivity)
     cost_probe= nbTuplesS*COMP*(len(idx))  + (read_probe*IO_READ+write_probe*IO_WRITE) + math.ceil(nbTuplesR*selectivity)*MOVE
     read=read_probe+read_build
