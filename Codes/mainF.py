@@ -6,7 +6,7 @@ from index import *
 
 #Oral Mercredi 30 aout 13h30
 
-def time_test(folderName,pageSize,LMemory,repetition,RunName):
+def time_test(RunName,folderName,pageSize,LMemory,repetition,MeanMin):
 
     clean_data(folderName)
 
@@ -40,7 +40,7 @@ def time_test(folderName,pageSize,LMemory,repetition,RunName):
             percentage=round(((iTest/nbOfTests)*100))
             print("["+"■"*(percentage//2)+" "*(50-(percentage//2))+"] "+str(percentage)+"%", end="\r")
         
-        LTime.append((memory,sum(LMean[0])/repetition,sum(LMean[1])/repetition,sum(LMean[2])/repetition,sum(LMean[3])/repetition,sum(LMean[4])/repetition))
+        LTime.append((memory,MeanMin(LMean[0]),MeanMin(LMean[1]),MeanMin(LMean[2]),MeanMin(LMean[3]),MeanMin(LMean[4])))
     T=pd.DataFrame(LTime,columns=["Memory"]+LEGENDS[:-1])
     T.to_csv('TimeTest/'+folderName+"_"+RunName+".csv",sep=',',index=False)
     print("["+"■"*50+"] 100%")
@@ -51,18 +51,19 @@ def time_test(folderName,pageSize,LMemory,repetition,RunName):
     print("Run done in : "+ str(heure)+"h "+str(minute)+"m "+str(second)+"s")
 
 if __name__ == '__main__':
-    
-    Rsize=(10*32)-5
+
+    pageSize=256
+    Rsize=(11*pageSize)-5
     Ssize=Rsize*2
     selectivity=1
-    memory=250
-    pageSize=32
-    folderName="R101S202Sel1"
-    LMemory=[i for i in range (13,52,3)]+[i for i in range (52,103,5)]+[i for i in range (103,210,15)]+[210,210]
+    memory=10
+    folderName="R11S22P256Sel1"
+    #LMemory=[i for i in range (13,52,3)]+[i for i in range (52,103,5)]+[i for i in range (103,210,15)]+[210,211]
+    LMemory=[i for i in range (5,11)]+[i for i in range (11,28,4)]
     repetition=3
-    RunName="grosrunsamèr"
+    RunName="runpage256min"
     
-
+    #test_result("R11S22P256Sel1","R11S22P256Sel1_cpi")
     
     #Generation de données
 
@@ -74,38 +75,26 @@ if __name__ == '__main__':
     #L=[]
     #--------Test--------
     
-    #L.append((db["Y"].get(0),db["X"].get(0)))
-    #print(type(L[0][0]))
-
-    #sort_file(folderName,memory,pageSize,"R")
-
-    #time_test(simple_hash_join_file,folderName,pageSize,LMemory)
-
+    #time_test(RunName,folderName,pageSize,LMemory,repetition,min)
 
     #Théorique
 
-    #print(cartesian_product(folderName,selectivity,memory,pageSize))
-    #print(sort_merge_join(folderName,selectivity,memory,pageSize))
+
 
     #Pratique
 
-    # timer=cartesian_product_index_file(folderName,memory,pageSize)
-    # print("cartesian Done in : "+ str(timer)+"s")
-    # timer2=sort_merge_file(folderName,memory,pageSize) 
-    # print("sort merge Done in : "+ str(round(timer2,2))+"s")
-    # timer3=simple_hash_join_file(folderName,memory,pageSize)
-    # print("simple hash Done in : "+ str(round(timer3,2))+"s")
-    # timer4=grace_hash_join_file(folderName,memory,pageSize)
-    # print("grace hash Done in : "+ str(round(timer4,2))+"s")
-    # timer5=hybrid_hash_join_file(folderName,memory,pageSize)
-    # print("hybrid hash Done in : "+ str(round(timer5,2))+"s")
-    #time_test(folderName,pageSize,LMemory,repetition,RunName)
+    #timer=cartesian_product_index_file(folderName,memory,pageSize)
+    #print("cartesian Done in : "+ str(timer)+"s")
+    #timer2=sort_merge_file(folderName,memory,pageSize) 
+    #print("sort merge Done in : "+ str(round(timer2,2))+"s")
+    #timer3=simple_hash_join_file(folderName,memory,pageSize)
+    #print("simple hash Done in : "+ str(round(timer3,2))+"s")
+    #timer4=grace_hash_join_file(folderName,memory,pageSize)
+    #print("grace hash Done in : "+ str(round(timer4,2))+"s")
+    #timer5=hybrid_hash_join_file(folderName,memory,pageSize)
+    #print("hybrid hash Done in : "+ str(round(timer5,2))+"s")
+
     #time.sleep(5)
 
 
-
-    #test_cartesian_product(Rsize=1000,Ssize=2000,selectivity=0.25,memory=3,size_of_tuple=32,size_of_page=1024)
-    #test_cartesian_product_index(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page,size_key_index)
-    #test_sort_merge_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
-    #test_hybrid_hash_join(Rsize,Ssize,selectivity,memory,size_of_tuple,size_of_page)
     

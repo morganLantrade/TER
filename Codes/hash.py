@@ -48,7 +48,7 @@ def hybrid_hash_join_file(folderName,memory,pageSize):
         ibuffers=[0 for _ in range(B-1)]
         H=dict()
         T=[]
-        iT=0
+        iT=1
         for pageR in range(nbPageR):
             db=read_X_pages(folderName+"/R",pageR+1,1) 
             for i in range(len(db.index)):
@@ -136,16 +136,16 @@ def grace_hash_join_file(folderName,memory,pageSize):
             delete_folder(folderName+"_grace_hash_partition/"+f)
 
 
-
     nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
     nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
+
+    assert math.ceil(nbPageR/(memory-1))<=memory-2, "Pas définie"
 
     nbPartition=min(memory-1,nbPageR)
 
     for i in range(nbPartition):
         os.makedirs('Data/'+folderName+"_grace_hash_partition/"+str(i))
-
-    assert math.ceil(nbPageR/(memory-1))<=memory-2, "Pas définie"
+        
 
     seconds=time.time()
     
@@ -191,7 +191,7 @@ def grace_hash_join_file(folderName,memory,pageSize):
             del Temp
     del ibuffers
     del buffers
-    iT=0
+    iT=1
     T=[]
 
     timer=time.time()-seconds

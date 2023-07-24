@@ -29,6 +29,27 @@ BUILD_LEGENDS = ["Sort_merge","Grace_Hash","IndexR cartesian"]
 
 MODE= { "I" : (0,LEGENDS) , "O" : (1,LEGENDS),"IO" : (2,LEGENDS), "Build Cost" : (3,BUILD_LEGENDS) , "Probe Cost": (4,BUILD_LEGENDS) , "Cost" : (5,LEGENDS) ,"Experimental" : (6,LEGENDS[:-1]) }
 
+def test_result(folderName,resultFolderName):
+
+    nbPageR=len([f for f in os.listdir("Data/"+folderName) if ("R") in f])
+    nbPageS=len([f for f in os.listdir("Data/"+folderName) if ("S") in f])
+    nbPageT=len([f for f in os.listdir("Data/"+resultFolderName) if ("T") in f])
+
+    dbR=read_X_pages(folderName+"/R",1,nbPageR)
+    dbS=read_X_pages(folderName+"/S",1,nbPageS)
+
+    dbT=read_X_pages_T(resultFolderName+"/T",1,nbPageT)
+    dbT2=pd.merge(dbR, dbS, left_on='Y', right_on='Y', how='left')
+    dbT=dbT.sort_values(by=['Y']).reset_index(drop=True)
+    dbT2=dbT2.sort_values(by=['Y']).reset_index(drop=True)
+
+    print(dbT.head())
+    print(dbT2.head())
+    print(dbT.equals(dbT2))
+
+def meanOfList(L):
+    return sum(L)/len(L)
+
 def indexOfMin(L):
     index=0
     min=L[0]
@@ -73,6 +94,19 @@ def read_X_pages(name,i,x):
             a=next(spamreader)
             for x,y in spamreader:
                 L.append((int(x),int(y)))
+                
+    return pd.DataFrame(L,columns=a)
+
+def read_X_pages_T(name,i,x):
+    '''Retourne un dataframe correspondant au fichier name de la page i jusqu'a la page i+x'''
+    L=[]
+    for i in range(i,i+x):
+        with open("Data/"+name+"_"+str(i)+".csv", newline='') as csvfile:
+
+            spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+            a=next(spamreader)
+            for x,y,z in spamreader:
+                L.append((int(x),int(y),int(z)))
                 
     return pd.DataFrame(L,columns=a)
 

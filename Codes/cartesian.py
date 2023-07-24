@@ -126,7 +126,9 @@ def cartesian_product_index_file(folderName,memory,pageSize):
                 
                 x,y1=read_line(folderName+"_sorted/R"+str(passe)+"_0",page,line)
                 
-                T.append((x,(y1,y),z))
+                assert y==y1, "Erreur index"
+
+                T.append((x,y,z))
                 #buffer plein
                 if len(T)==pageSize:
                     pd.DataFrame(T,columns=['X','Y','Z']).to_csv('Data/'+folderName+"_cpi/T_"+str(iT)+".csv",sep=',',index=False)
