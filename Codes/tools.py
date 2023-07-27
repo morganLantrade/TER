@@ -25,9 +25,17 @@ SWAP=0.003
 
 LEGENDS = ["Sort_merge","Simple_Hash","Grace_Hash","Hybride_Hash","IndexR cartesian","IndexS cartesian"]
 BUILD_LEGENDS = ["Sort_merge","Grace_Hash","IndexR cartesian"]
+RESULT_FOLDER_NAME={"hybrid_hash_join_file":"_hybrid_hash","grace_hash_join_file":"_grace_hash","simple_hash_join_file_loop":"_hash","cartesian_product_index_file":"_cpi","sort_merge_file":"_sm"}
 
 
 MODE= { "I" : (0,LEGENDS) , "O" : (1,LEGENDS),"IO" : (2,LEGENDS), "Build Cost" : (3,BUILD_LEGENDS) , "Probe Cost": (4,BUILD_LEGENDS) , "Cost" : (5,LEGENDS) ,"Experimental" : (6,LEGENDS[:-1]) }
+
+def unit_test(algo,folderName,LMemory,pageSize):
+    for memory in LMemory:
+        clean_data(folderName)
+        algo(folderName,memory,pageSize)
+        assert test_result(folderName,folderName+RESULT_FOLDER_NAME[algo.__name__]) , "Fail at memory ="+str(memory)
+    print("Unit test completed successfully")
 
 def test_result(folderName,resultFolderName):
 
@@ -38,14 +46,10 @@ def test_result(folderName,resultFolderName):
     dbR=read_X_pages(folderName+"/R",1,nbPageR)
     dbS=read_X_pages(folderName+"/S",1,nbPageS)
 
-    dbT=read_X_pages_T(resultFolderName+"/T",1,nbPageT)
-    dbT2=pd.merge(dbR, dbS, left_on='Y', right_on='Y', how='left')
-    dbT=dbT.sort_values(by=['Y']).reset_index(drop=True)
-    dbT2=dbT2.sort_values(by=['Y']).reset_index(drop=True)
+    dbT=read_X_pages_T(resultFolderName+"/T",1,nbPageT).sort_values(by=['Y']).reset_index(drop=True)
+    dbT2=pd.merge(dbR, dbS, left_on='Y', right_on='Y', how='left').sort_values(by=['Y']).reset_index(drop=True)
 
-    print(dbT.head())
-    print(dbT2.head())
-    print(dbT.equals(dbT2))
+    return dbT.equals(dbT2)
 
 def meanOfList(L):
     return sum(L)/len(L)

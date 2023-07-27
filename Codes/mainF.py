@@ -69,23 +69,23 @@ def time_test_run(RunName,folderName,pageSize,LMemory,repetition):
 if __name__ == '__main__':
 
     pageSize=32
-    Rsize=(11*pageSize)-5
+    Rsize=(101*pageSize)-5
     Ssize=Rsize*2
     selectivity=1
     memory=10
-    folderName="R11S22P32Sel1"
-    #LMemory=[i for i in range (13,52,3)]+[i for i in range (52,103,5)]+[i for i in range (103,210,15)]+[210,211]
-    LMemory=[i for i in range (5,11)]+[i for i in range (11,28,4)]
+    folderName="R101S202P32Sel1"
+    LMemory=[i for i in range (13,52,3)]+[i for i in range (52,103,5)]+[i for i in range (103,210,15)]+[210,211]
+    #LMemory=[i for i in range (5,11)]+[i for i in range (11,28,4)]
     repetition=5
-    RunName="petit_run"
+    RunName="gros_run_R5"
     
     #test_result("R11S22P256Sel1","R11S22P256Sel1_cpi")
     
     #Generation de données
 
-    #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    #db_to_file(R,pageSize,folderName,"R")
-    #db_to_file(S,pageSize,folderName,"S")
+    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    db_to_file(R,pageSize,folderName,"R")
+    db_to_file(S,pageSize,folderName,"S")
 
     #db=read_X_pages(folderName+"/R",1,1)
     #L=[]
