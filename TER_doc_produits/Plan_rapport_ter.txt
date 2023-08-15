@@ -1,22 +1,21 @@
 
-Abstract
-
 Introduction
 
-I. Présentation de notre méthode et de nos outils d'analyses
 
-II. 1 cartésien normal -> indexé
+I. Gestion de projet 
+
+II.Présentation de notre méthode et de nos outils d'analyses
+
+III. 1 cartésien normal -> indexé
     2 Sort-merge,  
     3 hachages : simple -> grace -> hybrides
 
 
-III. Analyses théoriques/expérimentales
+IV. Comparaisons Analyses théoriques/expérimentales
 théorie des cout IO/temps
 expérimentation des cout IO/temps
-
-IV. Comparaisons performances 
--parametres importants/conditions ou tel algo est le meilleur
--résultat expérimentaux
+parametres importants/conditions ou tel algo est le meilleur
+résultat expérimentaux
 
 Conclusion
 
