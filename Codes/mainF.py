@@ -72,10 +72,11 @@ if __name__ == '__main__':
     Rsize=(101*pageSize)-5
     Ssize=Rsize*2
     selectivity=1
-    memory=10
+    memory=40
     folderName="R101S202P32Sel1"
-    LMemory=[i for i in range (13,52,3)]+[i for i in range (52,103,5)]+[i for i in range (103,210,15)]+[210,211]
+    #LMemory=[i for i in range (13,52,3)]+[i for i in range (52,103,5)]+[i for i in range (103,210,15)]+[210,211]
     #LMemory=[i for i in range (5,11)]+[i for i in range (11,28,4)]
+    LMemory=[14]
     repetition=5
     RunName="gros_run_R5"
     
@@ -83,15 +84,17 @@ if __name__ == '__main__':
     
     #Generation de données
 
-    R,S=generate_db(Rsize,Ssize,selectivity,double=False)
-    db_to_file(R,pageSize,folderName,"R")
-    db_to_file(S,pageSize,folderName,"S")
+    #R,S=generate_db(Rsize,Ssize,selectivity,double=False)
+    #db_to_file(R,pageSize,folderName,"R")
+    #db_to_file(S,pageSize,folderName,"S")
 
     #db=read_X_pages(folderName+"/R",1,1)
     #L=[]
     #--------Test--------
     
-    time_test_run(RunName,folderName,pageSize,LMemory,repetition)
+    #time_test_run(RunName,folderName,pageSize,LMemory,repetition)
+
+    #unit_test(sort_merge_file,folderName,LMemory,pageSize)
 
     #Théorique
 
@@ -101,16 +104,20 @@ if __name__ == '__main__':
 
     #timer=cartesian_product_index_file(folderName,memory,pageSize)
     #print("cartesian Done in : "+ str(timer)+"s")
-    #timer2=sort_merge_file(folderName,memory,pageSize) 
+
+    timer2=sort_merge_file(folderName,memory,pageSize) 
     #print("sort merge Done in : "+ str(round(timer2,2))+"s")
+
     #timer3=simple_hash_join_file(folderName,memory,pageSize)
     #print("simple hash Done in : "+ str(round(timer3,2))+"s")
+
     #timer4=grace_hash_join_file(folderName,memory,pageSize)
     #print("grace hash Done in : "+ str(round(timer4,2))+"s")
+
     #timer5=hybrid_hash_join_file(folderName,memory,pageSize)
     #print("hybrid hash Done in : "+ str(round(timer5,2))+"s")
 
-    #time.sleep(5)
+    #time.sleep(60)
 
 
     

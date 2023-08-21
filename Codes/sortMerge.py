@@ -194,6 +194,7 @@ def sort_file(folderName,memory,pageSize,dbName):
     
     return passe-1,time.time()-seconds
 
+@profile
 def sort_merge_file(folderName,memory,pageSize):
     '''Effectue un join de S et R contenus dans la run foldername selon la memoire et la taille de page'''
     
@@ -293,7 +294,8 @@ def sort_merge_join_cost(nbTuplesR,nbTuplesS,selectivity,memory,pageSize):
 
     
     #Probe
-    read_probe=write_probe=R_pages+S_pages
+    read_probe=R_pages+S_pages
+    write_probe=math.ceil(R_pages*selectivity)
     cost_probe=(nbTuplesR+nbTuplesS)*COMP+(read_probe*IO_READ+write_probe*IO_WRITE)+ math.ceil(nbTuplesR)*selectivity 
 
     

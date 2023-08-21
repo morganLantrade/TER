@@ -214,7 +214,7 @@ def simple_hash_join_file_loop(folderName,memory,pageSize,T,iT,TPath):
     
     seconds=time.time()
 
-    nbPartitions= math.ceil(nbPageR/(memory-2))
+    nbPartitions= math.ceil(nbPageR/(memory-3))
     assert nbPartitions==1, "Débordement de la mémoire"
     
     #R peut être hachee dans la memoire
@@ -258,7 +258,7 @@ def simple_hash_join_file(folderName,memory,pageSize):
     T=[]
     iT=1
     
-    nbPartitions= math.ceil(nbPageR/(memory-2))
+    nbPartitions= math.ceil(nbPageR/(memory-3))
     
     #R peut être hachee dans la memoire
     if nbPartitions==1:

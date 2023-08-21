@@ -25,7 +25,7 @@ SWAP=0.003
 
 LEGENDS = ["Sort_merge","Simple_Hash","Grace_Hash","Hybride_Hash","IndexR cartesian","IndexS cartesian"]
 BUILD_LEGENDS = ["Sort_merge","Grace_Hash","IndexR cartesian"]
-RESULT_FOLDER_NAME={"hybrid_hash_join_file":"_hybrid_hash","grace_hash_join_file":"_grace_hash","simple_hash_join_file_loop":"_hash","cartesian_product_index_file":"_cpi","sort_merge_file":"_sm"}
+RESULT_FOLDER_NAME={"hybrid_hash_join_file":"_hybrid_hash","grace_hash_join_file":"_grace_hash","simple_hash_join_file":"_hash","cartesian_product_index_file":"_cpi","sort_merge_file":"_sm"}
 
 
 MODE= { "I" : (0,LEGENDS) , "O" : (1,LEGENDS),"IO" : (2,LEGENDS), "Build Cost" : (3,BUILD_LEGENDS) , "Probe Cost": (4,BUILD_LEGENDS) , "Cost" : (5,LEGENDS) ,"Experimental" : (6,LEGENDS[:-1]) }

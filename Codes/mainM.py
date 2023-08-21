@@ -67,14 +67,15 @@ def results_cost_join(nbTupleR,nbTuplesS,selectivity,M,pageSize,Mode):
 
 if __name__ == '__main__':
     help_mode= ["I","O","IO","Build Cost","Probe Cost","Cost","Experimental"]
-    Rsize=32*101
+    Rsize=(32*101)-5
     Ssize=Rsize*2
     selectivity=1
-    memory=50
+    memory=40
     pageSize=32
-    folderName="R101S202Sel1"
+    folderName="R101S202P32Sel1"
+    runName="gros_run_min"
     name="grosrunsamèr"
-    M= [m for m in range(13,400,1)]
+    M= [m for m in range(13,212,1)]
     Mode1= help_mode[6]
     Mode2= help_mode[2]
     '''       
@@ -85,23 +86,21 @@ if __name__ == '__main__':
     nbTuplesR,nbTuplesS=nb_tuples(folderName,"R",pageSize),nb_tuples(folderName,"S",pageSize)
     '''
     
-    print(cartesian_product_index_file("Run3",59,32))
-    time.sleep(5)
+    #print(cartesian_product_index_file("Run3",59,32))
+    #time.sleep(5)
     #M,R2=read_result(folderName,name)
     #test
     
-    for i in range(120,121):
-        print(i)
-        test_cost_join(Rsize,Ssize,selectivity,i,pageSize)
-    
+
+    #test_cost_join(Rsize,Ssize,selectivity,memory,pageSize)
+    #M,R=read_result(folderName,runName)
     R1=results_cost_join(Rsize,Ssize,selectivity,M,pageSize,Mode2)
     
     #14325
     #timer= time.time()
     #simple_hash_join_file(folderName,memory,pageSize)
     #print(time.time()-timer)
-    #plot_courbes(M,R1,Mode)
-    plot_courbes(M,R1,Mode2)
+    plot_courbes(M,R1,"IO")
     
     #3507
   
