@@ -194,7 +194,6 @@ def sort_file(folderName,memory,pageSize,dbName):
     
     return passe-1,time.time()-seconds
 
-@profile
 def sort_merge_file(folderName,memory,pageSize):
     '''Effectue un join de S et R contenus dans la run foldername selon la memoire et la taille de page'''
     
